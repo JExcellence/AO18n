@@ -1,0 +1,27 @@
+# Spanish translations for JExTranslate Example Plugin
+
+prefix: "<gold>[PluginEjemplo]</gold> "
+
+welcome:
+  returning: "<green>¡Bienvenido de nuevo, {player}!</green> <gray>({online} jugadores en línea)</gray>"
+  first-join: "<yellow>¡Bienvenido al servidor, {player}!</yellow> <gray>¡Esta es tu primera vez!</gray>"
+  tutorial: "<gradient:gold:yellow>¡Bienvenido al Servidor!</gradient>"
+
+coins:
+  balance: "Tienes <gold>{amount}</gold> monedas"
+  info: "Monedas: {coins}"
+
+lang:
+  current: "Tu idioma actual es: <yellow>{locale}</yellow>"
+  available: "Idiomas disponibles: <gray>{locales}</gray>"
+  changed: "Idioma cambiado a: <green>{locale}</green>"
+  error: "<red>Error al cambiar el idioma. El almacenamiento de idioma no es compatible.</red>"
+
+reload:
+  starting: "Recargando traducciones..."
+  complete: "<green>¡Traducciones recargadas!</green> <gray>({locales} idiomas, {keys} claves)</gray>"
+
+error:
+  no-permission: "<red>No tienes permiso para usar este comando.</red>"
+  player-only: "<red>Este comando solo puede ser usado por jugadores.</red>"
+  invalid-usage: "<red>Uso inválido. Usa: {usage}</red>"

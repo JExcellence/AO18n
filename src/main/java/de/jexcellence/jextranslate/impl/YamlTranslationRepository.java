@@ -1,0 +1,302 @@
+package de.jexcellence.jextranslate.impl;
+
+import de.jexcellence.jextranslate.api.TranslationKey;
+import de.jexcellence.jextranslate.api.TranslationRepository;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.Yaml;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+public class YamlTranslationRepository implements TranslationRepository {
+
+    private static final Logger LOGGER = Logger.getLogger(YamlTranslationRepository.class.getName());
+    private static final String FILE_EXTENSION = ".yml";
+
+    private final Path translationsDirectory;
+    private final Map<Locale, Map<String, String>> translations = new ConcurrentHashMap<>();
+    private final List<RepositoryListener> listeners = new CopyOnWriteArrayList<>();
+    private Locale defaultLocale;
+    private long lastModified;
+
+    public YamlTranslationRepository(@NotNull final Path translationsDirectory, @NotNull final Locale defaultLocale) {
+        this.translationsDirectory = Objects.requireNonNull(translationsDirectory, "Translations directory cannot be null");
+        this.defaultLocale = Objects.requireNonNull(defaultLocale, "Default locale cannot be null");
+        this.lastModified = System.currentTimeMillis();
+    }
+
+    @NotNull
+    public static YamlTranslationRepository create(@NotNull final Path translationsDirectory, @NotNull final Locale defaultLocale) {
+        final YamlTranslationRepository repository = new YamlTranslationRepository(translationsDirectory, defaultLocale);
+        repository.reload().join();
+        return repository;
+    }
+
+    @Override
+    @NotNull
+    public Optional<String> getTranslation(@NotNull final TranslationKey key, @NotNull final Locale locale) {
+        Objects.requireNonNull(key, "Key cannot be null");
+        Objects.requireNonNull(locale, "Locale cannot be null");
+
+        Optional<String> translation = getTranslationForLocale(key, locale);
+        if (translation.isPresent()) {
+            return translation;
+        }
+
+        if (!locale.getCountry().isEmpty()) {
+            final Locale languageOnly = new Locale(locale.getLanguage());
+            translation = getTranslationForLocale(key, languageOnly);
+            if (translation.isPresent()) {
+                return translation;
+            }
+        }
+
+        if (!locale.equals(this.defaultLocale)) {
+            translation = getTranslationForLocale(key, this.defaultLocale);
+            if (translation.isPresent()) {
+                return translation;
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    @NotNull
+    private Optional<String> getTranslationForLocale(@NotNull final TranslationKey key, @NotNull final Locale locale) {
+        final Map<String, String> localeTranslations = this.translations.get(locale);
+        if (localeTranslations == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(localeTranslations.get(key.key()));
+    }
+
+    @Override
+    @NotNull
+    public Set<Locale> getAvailableLocales() {
+        return Set.copyOf(this.translations.keySet());
+    }
+
+    @Override
+    @NotNull
+    public Locale getDefaultLocale() {
+        return this.defaultLocale;
+    }
+
+    @Override
+    public void setDefaultLocale(@NotNull final Locale locale) {
+        Objects.requireNonNull(locale, "Locale cannot be null");
+        if (!this.translations.containsKey(locale)) {
+            throw new IllegalArgumentException("Locale not available: " + locale);
+        }
+        this.defaultLocale = locale;
+    }
+
+    @Override
+    @NotNull
+    public Set<TranslationKey> getAvailableKeys(@NotNull final Locale locale) {
+        Objects.requireNonNull(locale, "Locale cannot be null");
+        final Map<String, String> localeTranslations = this.translations.get(locale);
+        if (localeTranslations == null) {
+            return Set.of();
+        }
+        return localeTranslations.keySet().stream()
+            .map(TranslationKey::of)
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    @NotNull
+    public Set<TranslationKey> getAllAvailableKeys() {
+        return this.translations.values().stream()
+            .flatMap(map -> map.keySet().stream())
+            .distinct()
+            .map(TranslationKey::of)
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    @NotNull
+    public CompletableFuture<Void> reload() {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                loadTranslations();
+                this.lastModified = System.currentTimeMillis();
+                notifyReload();
+            } catch (final Exception exception) {
+                LOGGER.log(Level.SEVERE, "Failed to reload translations", exception);
+                notifyError(exception);
+            }
+        });
+    }
+
+    private void loadTranslations() throws IOException {
+        if (!Files.exists(this.translationsDirectory)) {
+            Files.createDirectories(this.translationsDirectory);
+            LOGGER.warning("Translations directory did not exist, created: " + this.translationsDirectory);
+            return;
+        }
+
+        this.translations.clear();
+
+        Files.list(this.translationsDirectory)
+            .filter(path -> path.toString().endsWith(FILE_EXTENSION))
+            .forEach(this::loadTranslationFile);
+
+        LOGGER.info("Loaded translations for " + this.translations.size() + " locales");
+    }
+
+    private void loadTranslationFile(@NotNull final Path file) {
+        try {
+            final String fileName = file.getFileName().toString();
+            final String localeString = fileName.substring(0, fileName.length() - FILE_EXTENSION.length());
+            final Locale locale = parseLocale(localeString);
+
+            try (final InputStream inputStream = Files.newInputStream(file)) {
+                final Yaml yaml = new Yaml();
+                final Map<String, Object> data = yaml.load(inputStream);
+
+                if (data != null) {
+                    final Map<String, String> flatMap = new HashMap<>();
+                    flattenMap("", data, flatMap);
+                    this.translations.put(locale, flatMap);
+
+                    LOGGER.fine("Loaded " + flatMap.size() + " translations for locale: " + locale);
+
+                    for (final Map.Entry<String, String> entry : flatMap.entrySet()) {
+                        notifyTranslationLoaded(TranslationKey.of(entry.getKey()), locale, entry.getValue());
+                    }
+                }
+            }
+        } catch (final Exception exception) {
+            LOGGER.log(Level.WARNING, "Failed to load translation file: " + file, exception);
+            notifyError(exception);
+        }
+    }
+
+    private void flattenMap(@NotNull final String prefix, @NotNull final Map<String, Object> map, @NotNull final Map<String, String> result) {
+        for (final Map.Entry<String, Object> entry : map.entrySet()) {
+            final String key = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
+            final Object value = entry.getValue();
+
+            if (value instanceof Map) {
+                @SuppressWarnings("unchecked")
+                final Map<String, Object> nestedMap = (Map<String, Object>) value;
+                flattenMap(key, nestedMap, result);
+            } else if (value instanceof List) {
+                @SuppressWarnings("unchecked")
+                final List<String> list = (List<String>) value;
+                result.put(key, String.join("\n", list));
+            } else if (value != null) {
+                result.put(key, value.toString());
+            }
+        }
+    }
+
+    @NotNull
+    private Locale parseLocale(@NotNull final String localeString) {
+        final String[] parts = localeString.split("_");
+        if (parts.length == 1) {
+            return new Locale(parts[0]);
+        } else if (parts.length == 2) {
+            return new Locale(parts[0], parts[1]);
+        } else if (parts.length >= 3) {
+            return new Locale(parts[0], parts[1], parts[2]);
+        }
+        return this.defaultLocale;
+    }
+
+    @Override
+    public void addListener(@NotNull final RepositoryListener listener) {
+        Objects.requireNonNull(listener, "Listener cannot be null");
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void removeListener(@NotNull final RepositoryListener listener) {
+        Objects.requireNonNull(listener, "Listener cannot be null");
+        this.listeners.remove(listener);
+    }
+
+    @Override
+    @NotNull
+    public RepositoryMetadata getMetadata() {
+        return new MetadataImpl();
+    }
+
+    private void notifyReload() {
+        for (final RepositoryListener listener : this.listeners) {
+            try {
+                listener.onReload(this);
+            } catch (final Exception exception) {
+                LOGGER.log(Level.WARNING, "Listener error during reload notification", exception);
+            }
+        }
+    }
+
+    private void notifyTranslationLoaded(@NotNull final TranslationKey key, @NotNull final Locale locale, @NotNull final String translation) {
+        for (final RepositoryListener listener : this.listeners) {
+            try {
+                listener.onTranslationLoaded(this, key, locale, translation);
+            } catch (final Exception exception) {
+                LOGGER.log(Level.WARNING, "Listener error during translation loaded notification", exception);
+            }
+        }
+    }
+
+    private void notifyError(@NotNull final Throwable error) {
+        for (final RepositoryListener listener : this.listeners) {
+            try {
+                listener.onError(this, error);
+            } catch (final Exception exception) {
+                LOGGER.log(Level.WARNING, "Listener error during error notification", exception);
+            }
+        }
+    }
+
+    private final class MetadataImpl implements RepositoryMetadata {
+
+        @Override
+        @NotNull
+        public String getType() {
+            return "yaml";
+        }
+
+        @Override
+        @NotNull
+        public String getSource() {
+            return translationsDirectory.toString();
+        }
+
+        @Override
+        public long getLastModified() {
+            return lastModified;
+        }
+
+        @Override
+        public int getTotalTranslations() {
+            return translations.values().stream()
+                .mapToInt(Map::size)
+                .sum();
+        }
+
+        @Override
+        @Nullable
+        public String getProperty(@NotNull final String key) {
+            return switch (key) {
+                case "directory" -> translationsDirectory.toString();
+                case "locales" -> String.valueOf(translations.size());
+                default -> null;
+            };
+        }
+    }
+}
