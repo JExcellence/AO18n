@@ -1,34 +1,36 @@
 /**
- * Deployment and contribution checklist for the {@code de.jexcellence.jextranslate} package.
- *
- * <h2>Repository layout</h2>
- * <ul>
- *     <li>Verify the YAML repository structure matches the expectations in the README sections
- *     {@code "### 3. Create Translation Files"} and {@code "### Repository Management"},
- *     updating both whenever directories, default locales, or storage locations change.</li>
- *     <li>Keep the build and distribution instructions in {@code "## 📦 Building from Source"}
- *     synchronized with any alterations to module boundaries or artifact outputs.</li>
- * </ul>
- *
- * <h2>Formatter alignment</h2>
- * <ul>
- *     <li>Align formatter behaviour and placeholder usage with the examples in
- *     {@code "### 2. Initialize in Your Plugin"} and {@code "### 4. Send Messages"},
- *     reflecting updates to formatter implementations or resolver defaults.</li>
- *     <li>Mirror any formatter validation or prefix changes in the README guidance under
- *     {@code "### 7. Validate Templates"} and {@code "### 2. Consistent Prefix Usage"} so code
- *     and documentation remain consistent.</li>
- * </ul>
- *
- * <h2>Cache and repository reset triggers</h2>
- * <ul>
- *     <li>Clear locale caches via {@code TranslationService.clearLocaleCache(...)} or perform a
- *     repository reload whenever YAML repositories are edited, new locales are introduced, or
- *     formatter/resolver strategies change, as highlighted in {@code "### Repository Management"}
- *     and {@code "### 6. Reload Command"}.</li>
- *     <li>During deployments, force cache invalidation after swapping storage backends, migrating
- *     translation keys, or updating MiniMessage formatter versions to honour the reminders in
- *     {@code "## ⚠️ Important Notes"}.</li>
- * </ul>
+ * Core documentation for the {@code de.jexcellence.jextranslate} package.
+ * <p>
+ * Every entry point <strong>must</strong> call
+ * {@link de.jexcellence.jextranslate.api.TranslationService#configure(de.jexcellence.jextranslate.api.TranslationService.ServiceConfiguration)}
+ * before interacting with repositories, formatters, or locale resolvers. This configuration step wires the
+ * repository, message formatter, and locale resolver that power the fluent translation APIs showcased in the
+ * module {@code README}. Skipping configuration leaves the translation runtime in an undefined state and will
+ * raise an {@link IllegalStateException} the first time a translation is requested.
+ * </p>
+ * <p>
+ * Locale resolution always follows the cascade documented in the README: an explicit override supplied to
+ * {@link de.jexcellence.jextranslate.api.TranslationService#create(de.jexcellence.jextranslate.api.TranslationKey, org.bukkit.entity.Player, java.util.Locale)}
+ * wins first, then the resolved player locale from the configured resolver, and finally the service default
+ * (usually the repository fallback locale). Implementers should document this ordering anywhere translations are
+ * exposed so callers understand which locale will be selected when overrides are omitted.
+ * </p>
+ * <p>
+ * Player locale lookups and resolved defaults are cached per player/profile. Whenever translation bundles,
+ * formatter implementations, or resolver strategies change—such as during reload commands, hot-swap testing, or
+ * repository synchronization—you must clear the cache through
+ * {@link de.jexcellence.jextranslate.api.TranslationService#clearLocaleCache()} or its player-scoped overloads to
+ * guarantee that subsequent requests observe the updated configuration.
+ * </p>
+ * <p>
+ * Several downstream modules depend on this initialization contract: the platform bootstrap handled by
+ * {@link com.raindropcentral.rplatform.localization.TranslationManager}, shared UI scaffolding in
+ * {@link com.raindropcentral.rplatform.view.BaseView} and
+ * {@link com.raindropcentral.rplatform.view.APaginatedView}, and gameplay flows like
+ * {@link com.raindropcentral.rdq.view.bounty.BountyRewardView}. These components assume the service has already
+ * been configured and that locale caches are refreshed when translations change. Keep the package documentation
+ * synchronized with {@code JExTranslate/README.md} and any module guides that describe repository, formatter, or
+ * resolver setup so that project-wide initialization remains consistent.
+ * </p>
  */
 package de.jexcellence.jextranslate;
