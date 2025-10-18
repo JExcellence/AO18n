@@ -1,5 +1,7 @@
 # Agent Guidelines for `JExTranslate`
 
+> **Note:** Read the root `AGENTS.md` for repository-wide workflow, commit, and testing guidelines before following the module-specific notes below.
+
 ## Initialization Requirements
 - Always document and enforce the prerequisite call to `TranslationService.configure(...)` before any repository/formatter/resolver access. Treat this as a mandatory bootstrap step for every entry point, including tests and utilities.
 - When updating usage docs or examples, describe the locale resolution cascade and cache behaviour:
