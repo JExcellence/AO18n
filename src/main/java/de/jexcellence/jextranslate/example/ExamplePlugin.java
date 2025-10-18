@@ -1,6 +1,10 @@
 package de.jexcellence.jextranslate.example;
 
-import de.jexcellence.jextranslate.api.*;
+import de.jexcellence.jextranslate.api.LocaleResolver;
+import de.jexcellence.jextranslate.api.MessageFormatter;
+import de.jexcellence.jextranslate.api.TranslationKey;
+import de.jexcellence.jextranslate.api.TranslationRepository;
+import de.jexcellence.jextranslate.api.TranslationService;
 import de.jexcellence.jextranslate.impl.LocaleResolverProvider;
 import de.jexcellence.jextranslate.impl.MiniMessageFormatter;
 import de.jexcellence.jextranslate.impl.YamlTranslationRepository;
@@ -17,6 +21,18 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Locale;
 
+/**
+ * Example Bukkit plugin demonstrating how to configure {@link TranslationService} with the YAML repository and
+ * MiniMessage formatter. Highlights locale resolution behaviour, MiniMessage placeholder usage, and cache invalidation
+ * patterns described in the module documentation.
+ *
+ * <p>Refer to this class when bootstrapping new plugins to ensure {@link TranslationService#configure(TranslationService.ServiceConfiguration)}
+ * is invoked before any translations are resolved.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class ExamplePlugin extends JavaPlugin implements Listener {
 
     @Override
@@ -27,6 +43,10 @@ public class ExamplePlugin extends JavaPlugin implements Listener {
         getLogger().info("ExamplePlugin enabled with JExTranslate!");
     }
 
+    /**
+     * Initializes the translation service using {@link YamlTranslationRepository}, {@link MiniMessageFormatter}, and the
+     * auto-detecting {@link LocaleResolver}.
+     */
     private void initializeTranslationService() {
         final Path translationsDir = getDataFolder().toPath().resolve("translations");
 

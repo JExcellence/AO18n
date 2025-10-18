@@ -1,6 +1,11 @@
 package de.jexcellence.jextranslate.command;
 
-import de.jexcellence.jextranslate.api.*;
+import de.jexcellence.jextranslate.api.LocaleResolver;
+import de.jexcellence.jextranslate.api.MessageFormatter;
+import de.jexcellence.jextranslate.api.MissingKeyTracker;
+import de.jexcellence.jextranslate.api.TranslationKey;
+import de.jexcellence.jextranslate.api.TranslationRepository;
+import de.jexcellence.jextranslate.api.TranslationService;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -25,12 +30,35 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Administrative command that exposes translation management functionality, including listing missing keys, adding new
+ * translations, viewing statistics, and reloading the configured {@link TranslationRepository}. Integrates tightly with
+ * {@link TranslationService}, {@link MessageFormatter}, and {@link LocaleResolver} to ensure changes propagate through
+ * the entire translation pipeline.
+ *
+ * <p>Designed for Paper/Spigot environments and demonstrates MiniMessage placeholder usage consistent with the module's
+ * documentation.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class TranslationCommand implements CommandExecutor, TabCompleter, Listener {
 
     private static final Logger LOGGER = Logger.getLogger(TranslationCommand.class.getName());
@@ -50,6 +78,15 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
     private final Map<UUID, ChatSession> activeChatSessions = new ConcurrentHashMap<>();
     private final Map<UUID, GuiSession> activeGuiSessions = new ConcurrentHashMap<>();
 
+    /**
+     * Creates a new translation command using the supplied service collaborators. Event listeners are automatically
+     * registered for inventory and chat handling.
+     *
+     * @param plugin            the owning plugin instance
+     * @param missingKeyTracker tracker used to populate missing key views
+     * @param repository        repository providing translations and metadata
+     * @param localeResolver    resolver used for player locale detection and overrides
+     */
     public TranslationCommand(
         @NotNull final JavaPlugin plugin,
         @NotNull final MissingKeyTracker missingKeyTracker,
@@ -60,7 +97,7 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         this.missingKeyTracker = Objects.requireNonNull(missingKeyTracker, "Missing key tracker cannot be null");
         this.repository = Objects.requireNonNull(repository, "Repository cannot be null");
         this.localeResolver = Objects.requireNonNull(localeResolver, "Locale resolver cannot be null");
-        
+
         Bukkit.getPluginManager().registerEvents(this, plugin);
         LOGGER.info("TranslationCommand initialized");
     }
@@ -87,6 +124,13 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         };
     }
 
+    /**
+     * Handles the {@code /translate missing} sub-command, opening a GUI or printing to console depending on sender type.
+     *
+     * @param sender command executor
+     * @param args   command arguments
+     * @return {@code true} once the command is processed
+     */
     private boolean handleMissing(@NotNull final CommandSender sender, @NotNull final String[] args) {
         if (!sender.hasPermission(PERMISSION_MISSING)) {
             sender.sendMessage(Component.text("You don't have permission to view missing keys.").color(NamedTextColor.RED));
@@ -118,6 +162,13 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         }
     }
 
+    /**
+     * Handles the {@code /translate add} sub-command, launching a chat-based translation wizard.
+     *
+     * @param sender command executor
+     * @param args   command arguments
+     * @return {@code true} once the command is processed
+     */
     private boolean handleAdd(@NotNull final CommandSender sender, @NotNull final String[] args) {
         if (!sender.hasPermission(PERMISSION_ADD)) {
             sender.sendMessage(Component.text("You don't have permission to add translations.").color(NamedTextColor.RED));
@@ -140,6 +191,12 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         return true;
     }
 
+    /**
+     * Handles the {@code /translate stats} sub-command, printing tracker metrics using Adventure components.
+     *
+     * @param sender command executor
+     * @return {@code true} once the command is processed
+     */
     private boolean handleStats(@NotNull final CommandSender sender) {
         if (!sender.hasPermission(PERMISSION_STATS)) {
             sender.sendMessage(Component.text("You don't have permission to view statistics.").color(NamedTextColor.RED));
@@ -170,6 +227,12 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         return true;
     }
 
+    /**
+     * Handles the {@code /translate reload} sub-command, triggering repository reload and cache invalidation.
+     *
+     * @param sender command executor
+     * @return {@code true} once the command is processed
+     */
     private boolean handleReload(@NotNull final CommandSender sender) {
         if (!sender.hasPermission(PERMISSION_RELOAD)) {
             sender.sendMessage(Component.text("You don't have permission to reload translations.").color(NamedTextColor.RED));
@@ -190,6 +253,14 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         return true;
     }
 
+    /**
+     * Handles the {@code /translate backup} sub-command. The current implementation is a placeholder for actual backup
+     * logic and communicates success or failure to the sender.
+     *
+     * @param sender command executor
+     * @param args   command arguments
+     * @return {@code true} once the command is processed
+     */
     private boolean handleBackup(@NotNull final CommandSender sender, @NotNull final String[] args) {
         if (!sender.hasPermission(PERMISSION_BACKUP)) {
             sender.sendMessage(Component.text("You don't have permission to create backups.").color(NamedTextColor.RED));
@@ -212,6 +283,12 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         return true;
     }
 
+    /**
+     * Handles the {@code /translate info} sub-command, outputting repository metadata.
+     *
+     * @param sender command executor
+     * @return {@code true} once the command is processed
+     */
     private boolean handleInfo(@NotNull final CommandSender sender) {
         final TranslationRepository.RepositoryMetadata metadata = repository.getMetadata();
         final Component message = Component.text()
@@ -236,7 +313,7 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
 
     private void openMissingKeysGui(@NotNull final Player player, @NotNull final Locale locale, final int page) {
         final Set<TranslationKey> missingKeys = missingKeyTracker.getMissingKeys(locale);
-        
+
         if (missingKeys.isEmpty()) {
             player.sendMessage(Component.text("No missing keys found for locale: " + locale).color(NamedTextColor.GREEN));
             return;
@@ -267,12 +344,12 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
     private ItemStack createMissingKeyItem(@NotNull final TranslationKey key) {
         final ItemStack item = new ItemStack(Material.PAPER);
         final ItemMeta meta = item.getItemMeta();
-        
+
         if (meta != null) {
             meta.displayName(Component.text(key.key())
                 .color(NamedTextColor.YELLOW)
                 .decoration(TextDecoration.ITALIC, false));
-            
+
             meta.lore(List.of(
                 Component.text("Click to add translation")
                     .color(NamedTextColor.GRAY)
@@ -281,10 +358,10 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
                     .color(NamedTextColor.DARK_GRAY)
                     .decoration(TextDecoration.ITALIC, false)
             ));
-            
+
             item.setItemMeta(meta);
         }
-        
+
         return item;
     }
 
@@ -319,7 +396,7 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
             infoMeta.displayName(Component.text("Locale: " + locale)
                 .color(NamedTextColor.AQUA)
                 .decoration(TextDecoration.ITALIC, false));
-            
+
             infoMeta.lore(List.of(
                 Component.text("Page " + (currentPage + 1) + " of " + totalPages)
                     .color(NamedTextColor.GRAY)
@@ -328,7 +405,7 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
                     .color(NamedTextColor.GRAY)
                     .decoration(TextDecoration.ITALIC, false)
             ));
-            
+
             infoItem.setItemMeta(infoMeta);
         }
         inventory.setItem(49, infoItem);
@@ -396,7 +473,7 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
     public void onPlayerChat(@NotNull final AsyncPlayerChatEvent event) {
         final Player player = event.getPlayer();
         final ChatSession session = activeChatSessions.get(player.getUniqueId());
-        
+
         if (session == null) {
             return;
         }
@@ -445,7 +522,7 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     activeChatSessions.remove(player.getUniqueId());
-                    
+
                     final Component successMessage = Component.text()
                         .append(Component.text("Translation added successfully!").color(NamedTextColor.GREEN))
                         .append(Component.newline())
@@ -455,7 +532,7 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
                         .append(Component.text("Value: ").color(NamedTextColor.GRAY))
                         .append(Component.text(input).color(NamedTextColor.WHITE))
                         .build();
-                    
+
                     player.sendMessage(successMessage);
                 });
             } catch (final Exception exception) {

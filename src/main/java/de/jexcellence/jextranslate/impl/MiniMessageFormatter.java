@@ -15,6 +15,17 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * {@link MessageFormatter} specialization that always renders templates using Adventure MiniMessage. Intended for
+ * configurations where repository entries are guaranteed to use MiniMessage markup exclusively.
+ *
+ * <p>Relies on placeholder replacement performed prior to MiniMessage parsing, aligning with
+ * {@link de.jexcellence.jextranslate.api.TranslationService} expectations.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class MiniMessageFormatter implements MessageFormatter {
 
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([a-zA-Z0-9_-]+)}");
@@ -101,6 +112,9 @@ public class MiniMessageFormatter implements MessageFormatter {
         this.strategy = Objects.requireNonNull(strategy, "Strategy cannot be null");
     }
 
+    /**
+     * Simple {@link ValidationResult} implementation capturing MiniMessage template diagnostics.
+     */
     private record ValidationResultImpl(
         boolean isValid,
         @NotNull List<String> errors,

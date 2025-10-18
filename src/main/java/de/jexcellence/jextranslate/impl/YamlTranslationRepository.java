@@ -10,7 +10,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -18,6 +25,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * {@link TranslationRepository} implementation that loads locale-specific YAML files. Files reside in a directory
+ * supplied during construction and adhere to the cascade documented in {@link de.jexcellence.jextranslate.api.TranslationService}.
+ *
+ * <p>Supports asynchronous reloads, listener notifications, and flattening of nested YAML structures into dot-delimited
+ * keys compatible with {@link TranslationKey}.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class YamlTranslationRepository implements TranslationRepository {
 
     private static final Logger LOGGER = Logger.getLogger(YamlTranslationRepository.class.getName());
@@ -29,12 +47,26 @@ public class YamlTranslationRepository implements TranslationRepository {
     private Locale defaultLocale;
     private long lastModified;
 
+    /**
+     * Creates a repository pointing at the supplied directory and default locale. Call {@link #reload()} to populate the
+     * repository after construction, or use {@link #create(Path, Locale)} to automatically load translations.
+     *
+     * @param translationsDirectory the directory containing YAML locale files
+     * @param defaultLocale         the default repository locale
+     */
     public YamlTranslationRepository(@NotNull final Path translationsDirectory, @NotNull final Locale defaultLocale) {
         this.translationsDirectory = Objects.requireNonNull(translationsDirectory, "Translations directory cannot be null");
         this.defaultLocale = Objects.requireNonNull(defaultLocale, "Default locale cannot be null");
         this.lastModified = System.currentTimeMillis();
     }
 
+    /**
+     * Convenience factory that constructs and immediately loads the repository.
+     *
+     * @param translationsDirectory the directory containing YAML locale files
+     * @param defaultLocale         the default repository locale
+     * @return a loaded {@link YamlTranslationRepository}
+     */
     @NotNull
     public static YamlTranslationRepository create(@NotNull final Path translationsDirectory, @NotNull final Locale defaultLocale) {
         final YamlTranslationRepository repository = new YamlTranslationRepository(translationsDirectory, defaultLocale);
@@ -263,6 +295,9 @@ public class YamlTranslationRepository implements TranslationRepository {
         }
     }
 
+    /**
+     * Repository metadata implementation exposing file-system oriented details.
+     */
     private final class MetadataImpl implements RepositoryMetadata {
 
         @Override
