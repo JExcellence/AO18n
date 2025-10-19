@@ -45,7 +45,13 @@ public class ExamplePlugin extends JavaPlugin implements Listener {
 
     /**
      * Initializes the translation service using {@link YamlTranslationRepository}, {@link MiniMessageFormatter}, and the
-     * auto-detecting {@link LocaleResolver}.
+     * auto-detecting {@link LocaleResolver}. This helper assumes {@link #saveDefaultConfig()} has already provisioned the
+     * plugin data folder and must be invoked before any other component attempts to resolve translations.
+     *
+     * <p>The resulting {@link TranslationService} configuration becomes globally accessible, ensuring every subsequent call
+     * to {@link TranslationService#create(TranslationKey, Player)} or
+     * {@link TranslationService#createFresh(TranslationKey, Player)} operates on the same repository, formatter, and
+     * locale resolver.</p>
      */
     private void initializeTranslationService() {
         final Path translationsDir = getDataFolder().toPath().resolve("translations");
@@ -170,6 +176,13 @@ public class ExamplePlugin extends JavaPlugin implements Listener {
         player.sendMessage(debugInfo);
     }
 
+    /**
+     * Reloads the configured {@link TranslationRepository} and clears cached locale resolutions so newly loaded bundles are
+     * immediately visible to players. Cache invalidation is mandatory because locale detection results are memoized by the
+     * service to minimize lookups across join events.
+     *
+     * @param player the operator invoking the reload command
+     */
     private void handleReloadCommand(final Player player) {
         TranslationService.create(TranslationKey.of("reload.starting"), player)
             .withPrefix()

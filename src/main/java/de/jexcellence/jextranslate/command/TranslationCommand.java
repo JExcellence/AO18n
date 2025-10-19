@@ -228,7 +228,9 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
     }
 
     /**
-     * Handles the {@code /translate reload} sub-command, triggering repository reload and cache invalidation.
+     * Handles the {@code /translate reload} sub-command, triggering repository reload and cache invalidation. Locale
+     * resolutions are cached by {@link TranslationService}, so clearing them after a reload is essential to prevent
+     * players from seeing stale translations.
      *
      * @param sender command executor
      * @return {@code true} once the command is processed
@@ -242,8 +244,9 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         sender.sendMessage(Component.text("Reloading translations...").color(NamedTextColor.YELLOW));
 
         repository.reload().thenRun(() -> {
+            // Always flush cached locale resolutions so freshly loaded bundles take effect immediately.
             TranslationService.clearLocaleCache();
-            sender.sendMessage(Component.text("Translations reloaded successfully!").color(NamedTextColor.GREEN));
+            sender.sendMessage(Component.text("Translations reloaded and caches cleared!").color(NamedTextColor.GREEN));
         }).exceptionally(throwable -> {
             LOGGER.log(Level.WARNING, "Failed to reload translations", throwable);
             sender.sendMessage(Component.text("Failed to reload translations: " + throwable.getMessage()).color(NamedTextColor.RED));
