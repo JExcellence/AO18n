@@ -33,6 +33,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
     testImplementation("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
+    testImplementation("com.github.seeseemelk:MockBukkit-v1.20:3.72.0")
 }
 
 tasks.withType<JavaCompile> {
