@@ -203,6 +203,9 @@ public class ExamplePlugin extends JavaPlugin implements Listener {
     @NotNull
     private Locale parseLocale(@NotNull final String localeString) {
         final String[] parts = localeString.split("_");
+        if (parts.length == 0 || parts[0].isEmpty()) {
+            return Locale.ENGLISH;
+        }
         if (parts.length == 1) {
             return new Locale(parts[0]);
         } else if (parts.length == 2) {
