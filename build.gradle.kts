@@ -8,8 +8,6 @@ version = "3.0.0"
 description = "JExTranslate - Modern i18n API for Spigot/Bukkit/Paper"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
     withJavadocJar()
 }

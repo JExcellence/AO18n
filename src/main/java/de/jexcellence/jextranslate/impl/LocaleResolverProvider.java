@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 /**
  * Factory utility that produces {@link LocaleResolver} implementations targeting available Bukkit APIs. The resolver
  * produced by {@link #createAutoDetecting(Locale)} is used by default in
- * {@link de.jexcellence.jextranslate.example.ExamplePlugin} and honors the locale cascade documented by
  * {@link de.jexcellence.jextranslate.api.TranslationService}.
  *
  * <p>Resolvers created here provide optional locale storage and integrate with Bukkit's modern or legacy locale accessors
