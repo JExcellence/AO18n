@@ -8,13 +8,29 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * {@link MessageFormatter} implementation combining {@link MessageFormat}, simple replacements, and MiniMessage parsing.
+ * Designed to support the fluent placeholder API exposed by {@link de.jexcellence.jextranslate.api.TranslationService},
+ * ensuring repository templates can mix indexed, named, and MiniMessage placeholders across reload cycles.
+ *
+ * <p>Caches formatting metadata for performance while respecting strategy changes triggered by configuration reloads.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class HybridMessageFormatter implements MessageFormatter {
 
     private static final Logger LOGGER = Logger.getLogger(HybridMessageFormatter.class.getName());
@@ -28,10 +44,18 @@ public class HybridMessageFormatter implements MessageFormatter {
     private volatile FormattingStrategy strategy = FormattingStrategy.HYBRID;
     private volatile MiniMessage miniMessage;
 
+    /**
+     * Creates a formatter using {@link FormattingStrategy#HYBRID} and the default {@link MiniMessage} instance.
+     */
     public HybridMessageFormatter() {
         this.miniMessage = MiniMessage.miniMessage();
     }
 
+    /**
+     * Creates a formatter with the supplied strategy.
+     *
+     * @param strategy the initial formatting strategy to apply
+     */
     public HybridMessageFormatter(@NotNull final FormattingStrategy strategy) {
         this();
         this.strategy = Objects.requireNonNull(strategy, "Strategy cannot be null");
@@ -97,6 +121,12 @@ public class HybridMessageFormatter implements MessageFormatter {
         this.validationCache.clear();
     }
 
+    /**
+     * Replaces the MiniMessage instance used when formatting rich text components. Primarily used during configuration
+     * reloads to apply custom tags or resolvers.
+     *
+     * @param miniMessage the MiniMessage instance to use
+     */
     public void setMiniMessage(@NotNull final MiniMessage miniMessage) {
         this.miniMessage = Objects.requireNonNull(miniMessage, "MiniMessage cannot be null");
     }
@@ -136,7 +166,7 @@ public class HybridMessageFormatter implements MessageFormatter {
     @NotNull
     private String formatWithMiniMessage(@NotNull final String template, @NotNull final List<Placeholder> placeholders, @NotNull final Locale locale) {
         String processedTemplate = formatWithSimpleReplacement(template, placeholders, locale);
-        
+
         if (containsMiniMessageTags(processedTemplate)) {
             try {
                 final Component component = this.miniMessage.deserialize(processedTemplate);
@@ -247,7 +277,7 @@ public class HybridMessageFormatter implements MessageFormatter {
             final String namedBraceKey = "{" + placeholder.key() + "}";
             final String namedPercentKey = "%" + placeholder.key() + "%";
             final Integer index = keyToIndex.get(placeholder.key());
-            
+
             if (index != null) {
                 final String indexedKey = "{" + index + "}";
                 result = result.replace(namedBraceKey, indexedKey);
@@ -302,6 +332,9 @@ public class HybridMessageFormatter implements MessageFormatter {
         return new DefaultValidationResult(template);
     }
 
+    /**
+     * Default validation result implementation recording template diagnostics.
+     */
     private static final class DefaultValidationResult implements ValidationResult {
         private final String template;
         private final List<String> errors;
@@ -363,19 +396,19 @@ public class HybridMessageFormatter implements MessageFormatter {
         @Override
         @NotNull
         public List<String> getErrors() {
-            return Collections.unmodifiableList(this.errors);
+            return List.copyOf(this.errors);
         }
 
         @Override
         @NotNull
         public List<String> getWarnings() {
-            return Collections.unmodifiableList(this.warnings);
+            return List.copyOf(this.warnings);
         }
 
         @Override
         @NotNull
         public List<String> getPlaceholders() {
-            return Collections.unmodifiableList(this.placeholders);
+            return List.copyOf(this.placeholders);
         }
     }
 }

@@ -1,6 +1,10 @@
 package de.jexcellence.jextranslate.util;
 
-import de.jexcellence.jextranslate.api.*;
+import de.jexcellence.jextranslate.api.LocaleResolver;
+import de.jexcellence.jextranslate.api.TranslatedMessage;
+import de.jexcellence.jextranslate.api.TranslationKey;
+import de.jexcellence.jextranslate.api.TranslationRepository;
+import de.jexcellence.jextranslate.api.TranslationService;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,6 +14,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+/**
+ * Helper utilities for inspecting translation state at runtime. Provides debugging output for missing keys, locale
+ * resolution, and translation comparisons to aid administrators while synchronizing repository, formatter, and resolver
+ * components.
+ *
+ * <p>Methods expect {@link TranslationService#configure(TranslationService.ServiceConfiguration)} to have been invoked
+ * prior to use.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class DebugUtils {
 
     private static final Logger LOGGER = Logger.getLogger(DebugUtils.class.getName());
@@ -18,6 +34,14 @@ public class DebugUtils {
         throw new UnsupportedOperationException("Utility class");
     }
 
+    /**
+     * Builds a detailed debug report for the supplied translation key and player, including locale resolution details
+     * and fallback checks.
+     *
+     * @param key    the translation key to inspect
+     * @param player the player providing locale context
+     * @return formatted debug report text
+     */
     @NotNull
     public static String debugTranslation(@NotNull final String key, @NotNull final Player player) {
         Objects.requireNonNull(key, "Key cannot be null");
@@ -82,6 +106,14 @@ public class DebugUtils {
         return debug.toString();
     }
 
+    /**
+     * Compares two translations for the same player, returning plain-text differences.
+     *
+     * @param key1   first translation key
+     * @param key2   second translation key
+     * @param player the player providing locale context
+     * @return comparison report
+     */
     @NotNull
     public static String compareTranslations(@NotNull final String key1, @NotNull final String key2, @NotNull final Player player) {
         Objects.requireNonNull(key1, "Key1 cannot be null");
@@ -110,6 +142,12 @@ public class DebugUtils {
         return comparison.toString();
     }
 
+    /**
+     * Forces a locale cache refresh and repository reload, optionally targeting a specific player.
+     *
+     * @param player optional player whose locale cache should be cleared; {@code null} clears all caches
+     * @return status report string
+     */
     @NotNull
     public static String forceRefresh(@Nullable final Player player) {
         final StringBuilder status = new StringBuilder();
@@ -141,6 +179,11 @@ public class DebugUtils {
         return status.toString();
     }
 
+    /**
+     * Provides a textual summary of the current translation system configuration.
+     *
+     * @return summary string describing repository, formatter, and resolver state
+     */
     @NotNull
     public static String getSystemStatus() {
         final StringBuilder status = new StringBuilder();

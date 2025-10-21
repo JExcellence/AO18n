@@ -6,10 +6,27 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Thread-safe {@link MissingKeyTracker} implementation storing missing translations in concurrent collections. Designed
+ * for integration with {@link de.jexcellence.jextranslate.command.TranslationCommand} and other administrative tooling
+ * to highlight repository gaps discovered by {@link de.jexcellence.jextranslate.api.TranslationService} lookups.
+ *
+ * <p>Statistics are calculated lazily over current data structures to keep cache invalidation simple during repository
+ * reloads.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class SimpleMissingKeyTracker implements MissingKeyTracker {
 
     private final Map<Locale, Set<TranslationKey>> missingKeys = new ConcurrentHashMap<>();
@@ -124,6 +141,9 @@ public class SimpleMissingKeyTracker implements MissingKeyTracker {
         return new StatisticsImpl();
     }
 
+    /**
+     * Immutable snapshot of tracker statistics backed by live data.
+     */
     private final class StatisticsImpl implements Statistics {
 
         @Override

@@ -13,6 +13,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Factory utility that produces {@link LocaleResolver} implementations targeting available Bukkit APIs. The resolver
+ * produced by {@link #createAutoDetecting(Locale)} is used by default in
+ * {@link de.jexcellence.jextranslate.example.ExamplePlugin} and honors the locale cascade documented by
+ * {@link de.jexcellence.jextranslate.api.TranslationService}.
+ *
+ * <p>Resolvers created here provide optional locale storage and integrate with Bukkit's modern or legacy locale accessors
+ * when available, falling back to an in-memory store otherwise.</p>
+ *
+ * @author JExcellence
+ * @since 1.0.0
+ * @version 1.0.1
+ */
 public class LocaleResolverProvider {
 
     private static final Logger LOGGER = Logger.getLogger(LocaleResolverProvider.class.getName());
@@ -21,6 +34,12 @@ public class LocaleResolverProvider {
         throw new UnsupportedOperationException("Utility class");
     }
 
+    /**
+     * Creates a {@link LocaleResolver} that auto-detects the best available Bukkit API and stores per-player overrides.
+     *
+     * @param defaultLocale the fallback locale used when detection fails
+     * @return an auto-detecting locale resolver
+     */
     @NotNull
     public static LocaleResolver createAutoDetecting(@NotNull final Locale defaultLocale) {
         Objects.requireNonNull(defaultLocale, "Default locale cannot be null");
@@ -57,6 +76,9 @@ public class LocaleResolverProvider {
         }
     }
 
+    /**
+     * Base resolver implementation providing shared storage logic for per-player locales.
+     */
     private static abstract class BaseLocaleResolver implements LocaleResolver {
         protected final Map<UUID, Locale> storedLocales = new ConcurrentHashMap<>();
         protected Locale defaultLocale;
@@ -101,6 +123,9 @@ public class LocaleResolverProvider {
         }
     }
 
+    /**
+     * Resolver backed by the Adventure API {@code Player#locale()} method.
+     */
     private static final class ModernLocaleResolver extends BaseLocaleResolver {
 
         private ModernLocaleResolver(@NotNull final Locale defaultLocale) {
@@ -127,6 +152,9 @@ public class LocaleResolverProvider {
         }
     }
 
+    /**
+     * Resolver using the legacy Bukkit {@code Player#getLocale()} method when Adventure API support is unavailable.
+     */
     private static final class LegacyLocaleResolver extends BaseLocaleResolver {
 
         private LegacyLocaleResolver(@NotNull final Locale defaultLocale) {
@@ -167,6 +195,9 @@ public class LocaleResolverProvider {
         }
     }
 
+    /**
+     * Fallback resolver that only uses stored locales and the configured default.
+     */
     private static final class FallbackLocaleResolver extends BaseLocaleResolver {
 
         private FallbackLocaleResolver(@NotNull final Locale defaultLocale) {

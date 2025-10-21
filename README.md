@@ -485,6 +485,48 @@ Interface for resolving player locales.
 3. **Default locale**: Configured fallback
 4. **Key name**: If all else fails, return the key itself
 
+#### Fresh Translation Builders
+
+Use `TranslationService.createFresh(...)` whenever you require a builder that ignores any cached placeholder state and
+forces the service to resolve templates, prefixes, and locale metadata from the latest repository contents. This is
+particularly useful in administrative tooling that assembles different placeholder combinations for the same key within
+one tick. Standard `create(...)` calls remain efficient for single-use message dispatch, but `createFresh(...)`
+guarantees a pristine builder every time it is invoked.
+
+#### Repository Reloads and Cache Clearing
+
+Reloading a `TranslationRepository` does not automatically invalidate cached locale resolutions. Always follow any
+`repository.reload()` invocation with the appropriate cache purge:
+
+- `TranslationService.clearLocaleCache()` to flush the entire locale cache after global reloads.
+- `TranslationService.clearLocaleCache(Player)` to refresh a specific player's cached locale when toggling language
+  preferences.
+
+Operators should document this requirement in scripts and commands—forgetting to clear caches will leave players stuck
+with stale translations until they reconnect or their cache entry expires.
+
+#### MiniMessage Placeholder Syntax
+
+MiniMessage placeholders must be wrapped in `{placeholder}` tokens. Common patterns include:
+
+```yaml
+coins:
+  balance: "<gray>You have <gold>{amount}</gold> coins</gray>"
+
+welcome:
+  returning: "<green>Welcome back, {player}!</green>"
+
+announcement:
+  broadcast: "<bold><red>ALERT:</red></bold> <white>{message}</white>"
+```
+
+- Escape MiniMessage control characters inside placeholders with single quotes, for example
+  `<hover:show_text:'Click to open {menu}'><green>{label}</green></hover>`.
+- Keep placeholders immutable—each chained `.with(...)` call should operate on a fresh message instance as described in
+  the builder section above.
+- Validate complex templates through `MessageFormatter#validateTemplate(String)` so malformed MiniMessage markup never
+  reaches players.
+
 ### YAML File Structure
 
 **Simple keys:**
@@ -698,7 +740,8 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
     if (command.getName().equalsIgnoreCase("reloadtranslations")) {
         TranslationRepository repository = TranslationService.getConfiguration().repository();
         repository.reload().thenRun(() -> {
-            sender.sendMessage("Translations reloaded successfully!");
+            TranslationService.clearLocaleCache();
+            sender.sendMessage("Translations reloaded successfully and caches cleared!");
         });
         return true;
     }
