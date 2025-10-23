@@ -787,8 +787,8 @@ TranslationService.create(key, player)
 | `MessageKey` | `TranslationKey` |
 | `Message` | `TranslatedMessage` |
 | `PlayerLocaleService` | `LocaleResolver` |
-| `includePrefix()` | `withPrefix()` |
-| `withPlaceholder()` | `with()` |
+| `withPrefix()` | `withPrefix()` |
+| `with()` | `with()` |
 | `sendMessage()` | `send()` |
 
 ### Code Examples
@@ -796,9 +796,9 @@ TranslationService.create(key, player)
 **Before (2.x):**
 ```java
 I18n.create(MessageKey.of("welcome.message"), player)
-    .includePrefix()
-    .withPlaceholder("name", player.getName())
-    .sendMessage();
+    .withPrefix()
+    .with("name", player.getName())
+    .send();
 ```
 
 **After (3.0):**

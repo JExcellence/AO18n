@@ -48,7 +48,7 @@ public class TranslationService {
     private final Player player;
     private final Locale locale;
     private final List<Placeholder> placeholders;
-    private final boolean includePrefix;
+    private final boolean withPrefix;
     private final TranslationKey customPrefixKey;
 
     private TranslationService(
@@ -56,14 +56,14 @@ public class TranslationService {
         @NotNull final Player player,
         @NotNull final Locale locale,
         @NotNull final List<Placeholder> placeholders,
-        final boolean includePrefix,
+        final boolean withPrefix,
         @Nullable final TranslationKey customPrefixKey
     ) {
         this.key = key;
         this.player = player;
         this.locale = locale;
         this.placeholders = List.copyOf(placeholders);
-        this.includePrefix = includePrefix;
+        this.withPrefix = withPrefix;
         this.customPrefixKey = customPrefixKey;
     }
 
@@ -243,7 +243,7 @@ public class TranslationService {
         final Placeholder placeholder = createPlaceholder(key, value);
         final List<Placeholder> newPlaceholders = new ArrayList<>(this.placeholders);
         newPlaceholders.add(placeholder);
-        return new TranslationService(this.key, this.player, this.locale, newPlaceholders, this.includePrefix, this.customPrefixKey);
+        return new TranslationService(this.key, this.player, this.locale, newPlaceholders, this.withPrefix, this.customPrefixKey);
     }
 
     /**
@@ -258,7 +258,7 @@ public class TranslationService {
         Objects.requireNonNull(placeholder, "Placeholder cannot be null");
         final List<Placeholder> newPlaceholders = new ArrayList<>(this.placeholders);
         newPlaceholders.add(placeholder);
-        return new TranslationService(this.key, this.player, this.locale, newPlaceholders, this.includePrefix, this.customPrefixKey);
+        return new TranslationService(this.key, this.player, this.locale, newPlaceholders, this.withPrefix, this.customPrefixKey);
     }
 
     /**
@@ -277,7 +277,7 @@ public class TranslationService {
             final Placeholder placeholder = createPlaceholder(entry.getKey(), entry.getValue());
             newPlaceholders.add(placeholder);
         }
-        return new TranslationService(this.key, this.player, this.locale, newPlaceholders, this.includePrefix, this.customPrefixKey);
+        return new TranslationService(this.key, this.player, this.locale, newPlaceholders, this.withPrefix, this.customPrefixKey);
     }
 
     /**
@@ -298,7 +298,7 @@ public class TranslationService {
 
             final Component mainComponent = configuration.formatter().formatComponent(mainTranslation.get(), this.placeholders, this.locale);
 
-            if (this.includePrefix) {
+            if (this.withPrefix) {
                 final Component prefixComponent = buildPrefixComponent();
                 if (prefixComponent != null) {
                     final Component finalComponent = Component.join(JoinConfiguration.noSeparators(), prefixComponent, mainComponent);
