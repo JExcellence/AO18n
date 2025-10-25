@@ -1,9 +1,9 @@
 package de.jexcellence.jextranslate.command;
 
-import be.seeseemelk.mockbukkit.MockBukkit;
-import be.seeseemelk.mockbukkit.ServerMock;
-import be.seeseemelk.mockbukkit.command.ConsoleCommandSenderMock;
-import be.seeseemelk.mockbukkit.entity.PlayerMock;
+import org.mockbukkit.mockbukkit.MockBukkit;
+import org.mockbukkit.mockbukkit.ServerMock;
+import org.mockbukkit.mockbukkit.command.ConsoleCommandSenderMock;
+import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import de.jexcellence.jextranslate.api.LocaleResolver;
 import de.jexcellence.jextranslate.api.MissingKeyTracker;
 import de.jexcellence.jextranslate.api.TranslationKey;
