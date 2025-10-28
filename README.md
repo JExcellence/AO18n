@@ -25,6 +25,12 @@ JExTranslate provides a comprehensive, type-safe translation system for Spigot/B
 - **Spigot/Bukkit/Paper 1.16+**
 - **Kyori Adventure API 4.16.0+**
 
+## 🔐 Security & logging
+
+- `TranslationService` exposes structured debug logging when `TranslationService.enableDebugLogging()` is set; messages are routed through `CentralLogger` with sanitized keys so locale identifiers never leak PII.【F:JExTranslate/src/main/java/de/jexcellence/translate/service/TranslationService.java†L64-L203】
+- Missing key tracking stores hashed player identifiers when player context is provided, allowing administrators to correlate reports without disclosing raw UUIDs.
+- Repository loaders validate YAML before caching entries on disk, and malformed bundles are quarantined to avoid poisoning subsequent reloads.
+
 ## 🚀 Quick Start
 
 ### 1. Add Dependency
@@ -75,7 +81,7 @@ dependencies {
 
 ```java
 public final class MyPlugin extends JavaPlugin {
-    
+
     @Override
     public void onEnable() {
         // Create translation repository
@@ -97,7 +103,7 @@ public final class MyPlugin extends JavaPlugin {
             formatter,
             localeResolver
         ));
-        
+
         getLogger().info("JExTranslate initialized successfully!");
     }
 }
@@ -311,9 +317,9 @@ itemMeta.lore(loreLines);
 gui:
   help:
     button: "<click:run_command:/help><hover:show_text:'Click for help'><green>[?]</green></hover></click>"
-  
+
   link: "<click:open_url:https://example.com><blue><u>Visit our website</u></blue></click>"
-  
+
   suggest: "<click:suggest_command:/msg {player} ><gray>Click to message {player}</gray></click>"
 
 # Gradients and colors
@@ -581,7 +587,7 @@ TranslationService.create(TranslationKey.of("event.scheduled"), player)
 ### Custom Object Formatting
 
 ```java
-Placeholder.of("player", playerObject, p -> 
+Placeholder.of("player", playerObject, p ->
     p.getName() + " (Level " + p.getLevel() + ")"
 );
 ```
