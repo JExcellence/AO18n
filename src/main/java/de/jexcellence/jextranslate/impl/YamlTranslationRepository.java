@@ -13,9 +13,11 @@ import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.CodeSource;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -102,6 +104,43 @@ public class YamlTranslationRepository implements TranslationRepository {
             throw new IllegalArgumentException("Locale not available: " + locale);
         }
         this.defaultLocale = locale;
+    }
+
+    @Override
+    public synchronized boolean ensureTranslation(@NotNull final Locale locale, @NotNull final TranslationKey key, @NotNull final String defaultValue) {
+        Objects.requireNonNull(locale, "Locale cannot be null");
+        Objects.requireNonNull(key, "Key cannot be null");
+        Objects.requireNonNull(defaultValue, "Default value cannot be null");
+
+        final Map<String, String> localeTranslations = this.translations.computeIfAbsent(locale, ignored -> new ConcurrentHashMap<>());
+        if (localeTranslations.containsKey(key.key())) {
+            return false;
+        }
+
+        localeTranslations.put(key.key(), defaultValue);
+        final Path file = resolveLocaleFile(locale);
+
+        try {
+            Files.createDirectories(file.getParent());
+            final boolean fileExists = Files.exists(file);
+            final StringBuilder entryBuilder = new StringBuilder();
+            if (fileExists) {
+                entryBuilder.append(System.lineSeparator());
+            }
+            entryBuilder.append(key.key())
+                    .append(": \"")
+                    .append(escapeYaml(defaultValue))
+                    .append("\"")
+                    .append(System.lineSeparator());
+            Files.writeString(file, entryBuilder.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            this.lastModified = System.currentTimeMillis();
+            return true;
+        } catch (final IOException ioException) {
+            localeTranslations.remove(key.key());
+            LOGGER.log(Level.WARNING, "Failed to append translation for " + key.key() + " in locale " + locale, ioException);
+            notifyError(ioException);
+            return false;
+        }
     }
 
     @Override
@@ -355,6 +394,17 @@ public class YamlTranslationRepository implements TranslationRepository {
                 LOGGER.log(Level.WARNING, "Listener error during error notification", exception);
             }
         }
+    }
+
+    private @NotNull Path resolveLocaleFile(@NotNull final Locale locale) {
+        final String raw = locale.toString();
+        final String localeTag = raw.isEmpty() ? locale.getLanguage() : raw;
+        final String fileName = (localeTag == null || localeTag.isEmpty()) ? locale.getLanguage() : localeTag;
+        return this.translationsDirectory.resolve(fileName + EXT);
+    }
+
+    private @NotNull String escapeYaml(@NotNull final String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private enum SourceType {

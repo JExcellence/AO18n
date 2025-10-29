@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 public interface TranslationRepository {
 
@@ -81,6 +81,19 @@ public interface TranslationRepository {
      * @param locale the locale to use as the repository default
      */
     void setDefaultLocale(@NotNull Locale locale);
+
+    /**
+     * Ensures that a translation exists for the supplied key and locale, inserting the provided default when missing.
+     * Implementations may persist the new value immediately so subsequent lookups resolve without requiring a reload.
+     *
+     * @param locale       the locale to augment
+     * @param key          the translation key to create when absent
+     * @param defaultValue the MiniMessage-compatible default value
+     * @return {@code true} if a translation was created, {@code false} if an entry already existed
+     */
+    default boolean ensureTranslation(@NotNull Locale locale, @NotNull TranslationKey key, @NotNull String defaultValue) {
+        return false;
+    }
 
     /**
      * Retrieves the translation keys available for the supplied locale.
