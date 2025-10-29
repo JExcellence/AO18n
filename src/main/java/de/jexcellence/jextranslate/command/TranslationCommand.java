@@ -702,18 +702,33 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
     @NotNull
     private String toLocaleTag(@NotNull final Locale locale) {
         Objects.requireNonNull(locale, "Locale cannot be null");
-        final String raw = locale.toString();
-        if (!raw.isEmpty()) {
-            return raw;
-        }
+        // Prefer Locale fields to construct a stable, filesystem-safe tag using underscores
         final String language = locale.getLanguage();
-        if (!language.isEmpty()) {
-            return language;
+        final String country = locale.getCountry();
+        final String variant = locale.getVariant();
+
+        if (!language.isEmpty() && !country.isEmpty() && !variant.isEmpty()) {
+            return (language.toLowerCase(Locale.ROOT) + "_" + country.toUpperCase(Locale.ROOT) + "_" + variant);
         }
-        // Fallback to default locale if the provided locale is empty
+        if (!language.isEmpty() && !country.isEmpty()) {
+            return (language.toLowerCase(Locale.ROOT) + "_" + country.toUpperCase(Locale.ROOT));
+        }
+        if (!language.isEmpty()) {
+            return language.toLowerCase(Locale.ROOT);
+        }
+
+        // Fallback to repository default, normalized the same way
         final Locale defaultLocale = repository.getDefaultLocale();
-        final String fallback = defaultLocale.toString();
-        return fallback.isEmpty() ? defaultLocale.getLanguage() : fallback;
+        final String defLang = defaultLocale.getLanguage();
+        final String defCountry = defaultLocale.getCountry();
+        final String defVariant = defaultLocale.getVariant();
+        if (!defLang.isEmpty() && !defCountry.isEmpty() && !defVariant.isEmpty()) {
+            return (defLang.toLowerCase(Locale.ROOT) + "_" + defCountry.toUpperCase(Locale.ROOT) + "_" + defVariant);
+        }
+        if (!defLang.isEmpty() && !defCountry.isEmpty()) {
+            return (defLang.toLowerCase(Locale.ROOT) + "_" + defCountry.toUpperCase(Locale.ROOT));
+        }
+        return defLang.isEmpty() ? "en" : defLang.toLowerCase(Locale.ROOT);
     }
 
     @NotNull
