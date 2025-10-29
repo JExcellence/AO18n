@@ -2,6 +2,8 @@ package de.jexcellence.jextranslate.impl;
 
 import de.jexcellence.jextranslate.api.TranslationKey;
 import de.jexcellence.jextranslate.api.TranslationRepository;
+import de.jexcellence.jextranslate.util.TranslationBackupService;
+import de.jexcellence.jextranslate.util.TranslationLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
@@ -13,11 +15,24 @@ import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.CodeSource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -30,13 +45,15 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unchecked")
 public class YamlTranslationRepository implements TranslationRepository {
 
-    private static final Logger LOGGER = Logger.getLogger(YamlTranslationRepository.class.getName());
+    private static final Logger LOGGER = TranslationLogger.getLogger(YamlTranslationRepository.class);
     private static final String CLASSPATH_PREFIX = "translations/";
     private static final String EXT = ".yml";
 
     private final Path translationsDirectory;
     private final Map<Locale, Map<String, String>> translations = new ConcurrentHashMap<>();
     private final List<RepositoryListener> listeners = new CopyOnWriteArrayList<>();
+    private final TranslationBackupService backupService;
+    private final Set<Path> backedUpFiles = ConcurrentHashMap.newKeySet();
     private Locale defaultLocale;
     private long lastModified;
 
@@ -44,6 +61,7 @@ public class YamlTranslationRepository implements TranslationRepository {
         this.translationsDirectory = Objects.requireNonNull(translationsDirectory, "Translations directory cannot be null");
         this.defaultLocale = Objects.requireNonNull(defaultLocale, "Default locale cannot be null");
         this.lastModified = System.currentTimeMillis();
+        this.backupService = new TranslationBackupService(this.translationsDirectory);
     }
 
     @NotNull
@@ -105,6 +123,56 @@ public class YamlTranslationRepository implements TranslationRepository {
     }
 
     @Override
+    public synchronized boolean ensureTranslation(@NotNull final Locale locale, @NotNull final TranslationKey key, @NotNull final String defaultValue) {
+        Objects.requireNonNull(locale, "Locale cannot be null");
+        Objects.requireNonNull(key, "Key cannot be null");
+        Objects.requireNonNull(defaultValue, "Default value cannot be null");
+
+        final Map<String, String> localeTranslations = this.translations.computeIfAbsent(locale, ignored -> new ConcurrentHashMap<>());
+        if (localeTranslations.containsKey(key.key())) {
+            return false;
+        }
+
+        localeTranslations.put(key.key(), defaultValue);
+        final Path file = resolveLocaleFile(locale);
+
+        try {
+            Files.createDirectories(file.getParent());
+            createBackupIfNeeded(file, "ensure-translation");
+            final boolean fileExists = Files.exists(file);
+            final StringBuilder entryBuilder = new StringBuilder();
+            if (fileExists) {
+                entryBuilder.append(System.lineSeparator());
+            }
+            entryBuilder.append(key.key())
+                    .append(": \"")
+                    .append(escapeYaml(defaultValue))
+                    .append("\"")
+                    .append(System.lineSeparator());
+            Files.writeString(file, entryBuilder.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            this.lastModified = System.currentTimeMillis();
+            notifyTranslationLoaded(key, locale, defaultValue);
+            return true;
+        } catch (final IOException ioException) {
+            localeTranslations.remove(key.key());
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to append translation entry",
+                            Map.of(
+                                    "key", key.key(),
+                                    "locale", locale.toString(),
+                                    "file", file.toAbsolutePath().toString()
+                            )
+                    ),
+                    ioException
+            );
+            notifyError(ioException);
+            return false;
+        }
+    }
+
+    @Override
     @NotNull
     public Set<TranslationKey> getAvailableKeys(@NotNull final Locale locale) {
         Objects.requireNonNull(locale, "Locale cannot be null");
@@ -136,7 +204,14 @@ public class YamlTranslationRepository implements TranslationRepository {
                 this.lastModified = System.currentTimeMillis();
                 notifyReload();
             } catch (final Exception exception) {
-                LOGGER.log(Level.SEVERE, "Failed to reload translations", exception);
+                LOGGER.log(
+                        Level.SEVERE,
+                        TranslationLogger.message(
+                                "Failed to reload translations",
+                                Map.of("directory", this.translationsDirectory.toAbsolutePath().toString())
+                        ),
+                        exception
+                );
                 notifyError(exception);
             }
         });
@@ -144,82 +219,261 @@ public class YamlTranslationRepository implements TranslationRepository {
 
     private void loadTranslations() throws IOException {
         this.translations.clear();
+        this.backedUpFiles.clear();
 
         if (!Files.exists(this.translationsDirectory)) {
             Files.createDirectories(this.translationsDirectory);
-            LOGGER.info("Created translations directory: " + this.translationsDirectory.toAbsolutePath());
+            LOGGER.info(() -> TranslationLogger.message(
+                    "Created translations directory",
+                    Map.of("directory", this.translationsDirectory.toAbsolutePath().toString())
+            ));
         }
 
-        int copied = copyBundledTranslationsToDirectory();
-
-        int diskFiles = loadFromDirectory();
+        final BundledSyncStats syncStats = synchronizeBundledTranslations();
+        final int diskFiles = loadFromDirectory();
 
         if (diskFiles == 0) {
-            LOGGER.warning("No translation files loaded from disk. Directory: " + this.translationsDirectory.toAbsolutePath()
-                    + " | Newly copied from jar: " + copied);
+            LOGGER.warning(() -> TranslationLogger.message(
+                    "No translation files loaded from disk",
+                    Map.of(
+                            "directory", this.translationsDirectory.toAbsolutePath().toString(),
+                            "bundledCopies", syncStats.copied(),
+                            "bundledUpdates", syncStats.updated()
+                    )
+            ));
         } else {
-            LOGGER.info(String.format("Loaded translations for %d locales from disk. Files discovered: %d (copied from jar: %d)",
-                    this.translations.size(), diskFiles, copied));
+            LOGGER.info(() -> TranslationLogger.message(
+                    "Loaded translations from disk",
+                    Map.of(
+                            "locales", this.translations.size(),
+                            "diskFiles", diskFiles,
+                            "bundledCopies", syncStats.copied(),
+                            "bundledUpdates", syncStats.updated()
+                    )
+            ));
         }
     }
 
-    private int copyBundledTranslationsToDirectory() {
-        int copied = 0;
+    private void createBackupIfNeeded(@NotNull final Path file, @NotNull final String reason) {
+        if (!Files.exists(file)) {
+            return;
+        }
+        final Path absolute = file.toAbsolutePath();
+        if (!this.backedUpFiles.add(absolute)) {
+            return;
+        }
         try {
-            CodeSource codeSource = YamlTranslationRepository.class.getProtectionDomain().getCodeSource();
-            if (codeSource == null || codeSource.getLocation() == null) {
-                LOGGER.fine("No CodeSource available for YamlTranslationRepository; skipping bundled translations copy");
-                return 0;
+            this.backupService.createBackup(file, reason);
+        } catch (final IOException exception) {
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to create translation backup",
+                            Map.of(
+                                    "file", absolute.toString(),
+                                    "reason", reason
+                            )
+                    ),
+                    exception
+            );
+            notifyError(exception);
+        }
+    }
+
+    private BundledSyncStats synchronizeBundledTranslations() {
+        final Set<String> processed = new HashSet<>();
+        int copied = 0;
+        int updated = 0;
+
+        try {
+            final CodeSource codeSource = YamlTranslationRepository.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null && codeSource.getLocation() != null) {
+                final URL location = codeSource.getLocation();
+                try (JarFile jarFile = new JarFile(location.getPath().replace("%20", " "))) {
+                    final BundledSyncStats stats = processJarEntries(jarFile, processed);
+                    copied += stats.copied();
+                    updated += stats.updated();
+                }
+            } else {
+                LOGGER.fine(() -> TranslationLogger.message(
+                        "No CodeSource available for bundled translation synchronisation",
+                        Map.of("directory", this.translationsDirectory.toAbsolutePath().toString())
+                ));
             }
-            URL location = codeSource.getLocation();
-            try (JarFile jarFile = new JarFile(location.getPath().replace("%20", " "))) {
-                copied += copyFromJar(jarFile);
-            }
-        } catch (IOException io) {
-            LOGGER.log(Level.FINE, "Direct JAR open failed; trying JarURLConnection approach", io);
-            try {
-                URL dirUrl = YamlTranslationRepository.class.getClassLoader().getResource(CLASSPATH_PREFIX);
-                if (dirUrl != null) {
-                    URLConnection conn = dirUrl.openConnection();
-                    if (conn instanceof JarURLConnection jarURLConnection) {
-                        try (JarFile jar = jarURLConnection.getJarFile()) {
-                            copied += copyFromJar(jar);
-                        }
+        } catch (final IOException ioException) {
+            LOGGER.log(
+                    Level.FINE,
+                    TranslationLogger.message(
+                            "Direct JAR open failed; attempting JarURLConnection fallback",
+                            Map.of("directory", this.translationsDirectory.toAbsolutePath().toString())
+                    ),
+                    ioException
+            );
+        } catch (final Exception exception) {
+            LOGGER.log(Level.WARNING, TranslationLogger.message(
+                    "Unexpected error while synchronising bundled translations",
+                    Map.of("directory", this.translationsDirectory.toAbsolutePath().toString())
+            ), exception);
+            notifyError(exception);
+        }
+
+        try {
+            final URL dirUrl = YamlTranslationRepository.class.getClassLoader().getResource(CLASSPATH_PREFIX);
+            if (dirUrl != null) {
+                final URLConnection connection = dirUrl.openConnection();
+                if (connection instanceof JarURLConnection jarURLConnection) {
+                    try (JarFile jar = jarURLConnection.getJarFile()) {
+                        final BundledSyncStats stats = processJarEntries(jar, processed);
+                        copied += stats.copied();
+                        updated += stats.updated();
                     }
                 }
-            } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to copy bundled translations from JAR", e);
-                notifyError(e);
             }
-        } catch (Exception ex) {
-            LOGGER.log(Level.WARNING, "Unexpected error while copying bundled translations", ex);
-            notifyError(ex);
+        } catch (final Exception exception) {
+            LOGGER.log(Level.WARNING, TranslationLogger.message(
+                    "Failed to synchronise bundled translations via classloader",
+                    Map.of("directory", this.translationsDirectory.toAbsolutePath().toString())
+            ), exception);
+            notifyError(exception);
         }
-        return copied;
+
+        return new BundledSyncStats(copied, updated);
     }
 
-    private int copyFromJar(JarFile jarFile) throws IOException {
+    private BundledSyncStats processJarEntries(@NotNull final JarFile jarFile, @NotNull final Set<String> processed) throws IOException {
         int copied = 0;
-        Enumeration<JarEntry> entries = jarFile.entries();
+        int updated = 0;
+        final Enumeration<JarEntry> entries = jarFile.entries();
         while (entries.hasMoreElements()) {
-            JarEntry entry = entries.nextElement();
-            String name = entry.getName();
-            if (entry.isDirectory()) continue;
-            if (!name.startsWith(CLASSPATH_PREFIX)) continue;
-            if (!name.toLowerCase(Locale.ROOT).endsWith(EXT)) continue;
-
-            String fileName = name.substring(CLASSPATH_PREFIX.length());
-            Path target = this.translationsDirectory.resolve(fileName);
-            if (Files.exists(target)) continue;
-
-            try (InputStream in = YamlTranslationRepository.class.getClassLoader().getResourceAsStream(name)) {
-                if (in == null) continue;
-                Files.copy(new BufferedInputStream(in), target, StandardCopyOption.REPLACE_EXISTING);
-                LOGGER.info("Copied default translations file: " + target.toAbsolutePath());
-                copied++;
+            final JarEntry entry = entries.nextElement();
+            final String name = entry.getName();
+            if (entry.isDirectory()) {
+                continue;
             }
+            if (!name.startsWith(CLASSPATH_PREFIX)) {
+                continue;
+            }
+            if (!name.toLowerCase(Locale.ROOT).endsWith(EXT)) {
+                continue;
+            }
+
+            final BundledSyncStats stats = synchronizeBundledTranslation(
+                    name,
+                    () -> jarFile.getInputStream(entry),
+                    processed
+            );
+            copied += stats.copied();
+            updated += stats.updated();
         }
-        return copied;
+        return new BundledSyncStats(copied, updated);
+    }
+
+    private BundledSyncStats synchronizeBundledTranslation(
+            @NotNull final String resourceName,
+            @NotNull final IOSupplier<InputStream> supplier,
+            @NotNull final Set<String> processed
+    ) {
+        if (!processed.add(resourceName)) {
+            return BundledSyncStats.EMPTY;
+        }
+
+        final String fileName = resourceName.substring(CLASSPATH_PREFIX.length());
+        final Path target = this.translationsDirectory.resolve(fileName);
+
+        try {
+            if (!Files.exists(target)) {
+                try (InputStream in = supplier.get()) {
+                    if (in == null) {
+                        return BundledSyncStats.EMPTY;
+                    }
+                    Files.copy(new BufferedInputStream(in), target, StandardCopyOption.REPLACE_EXISTING);
+                }
+                LOGGER.info(() -> TranslationLogger.message(
+                        "Copied default translation file",
+                        Map.of("file", target.toAbsolutePath().toString())
+                ));
+                return new BundledSyncStats(1, 0);
+            }
+
+            final Map<String, String> bundledEntries = loadFlatTranslations(supplier);
+            if (bundledEntries.isEmpty()) {
+                return BundledSyncStats.EMPTY;
+            }
+
+            final Map<String, String> diskEntries = loadFlatTranslations(target);
+            final Map<String, String> missingEntries = new LinkedHashMap<>();
+            for (final Map.Entry<String, String> entry : bundledEntries.entrySet()) {
+                if (!diskEntries.containsKey(entry.getKey())) {
+                    missingEntries.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            if (missingEntries.isEmpty()) {
+                return BundledSyncStats.EMPTY;
+            }
+
+            appendMissingTranslations(target, missingEntries);
+            return new BundledSyncStats(0, 1);
+        } catch (final Exception exception) {
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to synchronise bundled translation",
+                            Map.of(
+                                    "resource", resourceName,
+                                    "target", target.toAbsolutePath().toString()
+                            )
+                    ),
+                    exception
+            );
+            notifyError(exception);
+            return BundledSyncStats.EMPTY;
+        }
+    }
+
+    private Map<String, String> loadFlatTranslations(@NotNull final IOSupplier<InputStream> supplier) throws IOException {
+        try (InputStream inputStream = supplier.get()) {
+            if (inputStream == null) {
+                return Map.of();
+            }
+            final Yaml yaml = new Yaml();
+            final Map<String, Object> data = yaml.load(inputStream);
+            if (data == null || data.isEmpty()) {
+                return Map.of();
+            }
+            final Map<String, String> flatMap = new LinkedHashMap<>();
+            flattenMap("", data, flatMap);
+            return flatMap;
+        } catch (final FileNotFoundException ignored) {
+            return Map.of();
+        }
+    }
+
+    private Map<String, String> loadFlatTranslations(@NotNull final Path path) throws IOException {
+        return loadFlatTranslations(() -> Files.newInputStream(path));
+    }
+
+    private void appendMissingTranslations(@NotNull final Path file, @NotNull final Map<String, String> missingEntries) throws IOException {
+        createBackupIfNeeded(file, "merge-bundled-defaults");
+        final StringBuilder builder = new StringBuilder();
+        if (Files.size(file) > 0) {
+            builder.append(System.lineSeparator());
+        }
+        for (final Map.Entry<String, String> entry : missingEntries.entrySet()) {
+            builder.append(entry.getKey())
+                    .append(": \"")
+                    .append(escapeYaml(entry.getValue()))
+                    .append("\"")
+                    .append(System.lineSeparator());
+        }
+        Files.writeString(file, builder.toString(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+        LOGGER.info(() -> TranslationLogger.message(
+                "Appended missing bundled translations",
+                Map.of(
+                        "file", file.toAbsolutePath().toString(),
+                        "entries", missingEntries.size()
+                )
+        ));
     }
 
     private int loadFromDirectory() throws IOException {
@@ -255,7 +509,14 @@ public class YamlTranslationRepository implements TranslationRepository {
             final Map<String, Object> data = yaml.load(inputStream);
 
             if (data == null || data.isEmpty()) {
-                LOGGER.fine("No entries in " + sourceType + " file: " + fileName + " for locale " + locale);
+                LOGGER.fine(() -> TranslationLogger.message(
+                        "No translation entries discovered",
+                        Map.of(
+                                "source", sourceType.name().toLowerCase(Locale.ROOT),
+                                "file", fileName,
+                                "locale", locale.toString()
+                        )
+                ));
                 return false;
             }
 
@@ -263,7 +524,15 @@ public class YamlTranslationRepository implements TranslationRepository {
             flattenMap("", data, flatMap);
 
             this.translations.put(locale, flatMap);
-            LOGGER.fine("Loaded " + flatMap.size() + " translations for locale: " + locale + " from " + sourceType + " file " + fileName);
+            LOGGER.fine(() -> TranslationLogger.message(
+                    "Loaded translations from source",
+                    Map.of(
+                            "source", sourceType.name().toLowerCase(Locale.ROOT),
+                            "file", fileName,
+                            "locale", locale.toString(),
+                            "entries", flatMap.size()
+                    )
+            ));
 
             for (final Map.Entry<String, String> entry : flatMap.entrySet()) {
                 notifyTranslationLoaded(TranslationKey.of(entry.getKey()), locale, entry.getValue());
@@ -272,7 +541,17 @@ public class YamlTranslationRepository implements TranslationRepository {
         } catch (FileNotFoundException e) {
             return false;
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to load translation file (" + sourceType + "): " + fileName, exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to load translation file",
+                            Map.of(
+                                    "source", sourceType.name().toLowerCase(Locale.ROOT),
+                                    "file", fileName
+                            )
+                    ),
+                    exception
+            );
             notifyError(exception);
             return false;
         }
@@ -332,7 +611,14 @@ public class YamlTranslationRepository implements TranslationRepository {
             try {
                 listener.onReload(this);
             } catch (final Exception exception) {
-                LOGGER.log(Level.WARNING, "Listener error during reload notification", exception);
+                LOGGER.log(
+                        Level.WARNING,
+                        TranslationLogger.message(
+                                "Listener error during reload notification",
+                                Map.of("listener", listener.getClass().getName())
+                        ),
+                        exception
+                );
             }
         }
     }
@@ -342,7 +628,18 @@ public class YamlTranslationRepository implements TranslationRepository {
             try {
                 listener.onTranslationLoaded(this, key, locale, translation);
             } catch (final Exception exception) {
-                LOGGER.log(Level.WARNING, "Listener error during translation loaded notification", exception);
+                LOGGER.log(
+                        Level.WARNING,
+                        TranslationLogger.message(
+                                "Listener error during translation loaded notification",
+                                Map.of(
+                                        "listener", listener.getClass().getName(),
+                                        "key", key.key(),
+                                        "locale", locale.toString()
+                                )
+                        ),
+                        exception
+                );
             }
         }
     }
@@ -352,9 +649,31 @@ public class YamlTranslationRepository implements TranslationRepository {
             try {
                 listener.onError(this, error);
             } catch (final Exception exception) {
-                LOGGER.log(Level.WARNING, "Listener error during error notification", exception);
+                LOGGER.log(
+                        Level.WARNING,
+                        TranslationLogger.message(
+                                "Listener error during error notification",
+                                Map.of("listener", listener.getClass().getName())
+                        ),
+                        exception
+                );
             }
         }
+    }
+
+    private @NotNull Path resolveLocaleFile(@NotNull final Locale locale) {
+        final String raw = locale.toString();
+        final String localeTag = raw.isEmpty() ? locale.getLanguage() : raw;
+        final String fileName = (localeTag == null || localeTag.isEmpty()) ? locale.getLanguage() : localeTag;
+        return this.translationsDirectory.resolve(fileName + EXT);
+    }
+
+    private @NotNull String escapeYaml(@NotNull final String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private record BundledSyncStats(int copied, int updated) {
+        private static final BundledSyncStats EMPTY = new BundledSyncStats(0, 0);
     }
 
     private enum SourceType {

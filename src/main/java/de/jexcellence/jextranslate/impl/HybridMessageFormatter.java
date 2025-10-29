@@ -2,6 +2,7 @@ package de.jexcellence.jextranslate.impl;
 
 import de.jexcellence.jextranslate.api.MessageFormatter;
 import de.jexcellence.jextranslate.api.Placeholder;
+import de.jexcellence.jextranslate.util.TranslationLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -29,11 +30,11 @@ import java.util.regex.Pattern;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 public class HybridMessageFormatter implements MessageFormatter {
 
-    private static final Logger LOGGER = Logger.getLogger(HybridMessageFormatter.class.getName());
+    private static final Logger LOGGER = TranslationLogger.getLogger(HybridMessageFormatter.class);
     private static final Pattern INDEXED_PLACEHOLDER = Pattern.compile("\\{(\\d+)(?:,([^}]+))?}");
     private static final Pattern NAMED_PLACEHOLDER = Pattern.compile("\\{([a-zA-Z_][a-zA-Z0-9_]*)(?:,([^}]+))?}");
     private static final Pattern PERCENT_PLACEHOLDER = Pattern.compile("%([a-zA-Z_][a-zA-Z0-9_]*)%");
@@ -76,7 +77,17 @@ public class HybridMessageFormatter implements MessageFormatter {
                 case MINI_MESSAGE -> formatWithMiniMessage(template, placeholders, locale);
             };
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to format message template: " + template, exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to format message template",
+                            Map.of(
+                                    "strategy", this.strategy.name(),
+                                    "template", template
+                            )
+                    ),
+                    exception
+            );
             throw new FormattingException("Failed to format message: " + exception.getMessage(), template, placeholders, exception);
         }
     }
@@ -96,7 +107,14 @@ public class HybridMessageFormatter implements MessageFormatter {
                 return Component.text(formatted);
             }
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to format component template: " + template, exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to format component template",
+                            Map.of("template", template)
+                    ),
+                    exception
+            );
             return Component.text(template);
         }
     }
@@ -139,7 +157,14 @@ public class HybridMessageFormatter implements MessageFormatter {
         try {
             return messageFormat.format(arguments);
         } catch (final IllegalArgumentException exception) {
-            LOGGER.log(Level.WARNING, "MessageFormat failed for template: " + template, exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "MessageFormat formatting failed",
+                            Map.of("template", template)
+                    ),
+                    exception
+            );
             return formatWithFallback(template, placeholders);
         }
     }
@@ -172,7 +197,14 @@ public class HybridMessageFormatter implements MessageFormatter {
                 final Component component = this.miniMessage.deserialize(processedTemplate);
                 return PlainTextComponentSerializer.plainText().serialize(component);
             } catch (final Exception exception) {
-                LOGGER.log(Level.WARNING, "MiniMessage parsing failed, falling back to simple replacement", exception);
+                LOGGER.log(
+                        Level.WARNING,
+                        TranslationLogger.message(
+                                "MiniMessage parsing failed, falling back to simple replacement",
+                                Map.of("template", template)
+                        ),
+                        exception
+                );
                 return processedTemplate;
             }
         }
@@ -207,7 +239,14 @@ public class HybridMessageFormatter implements MessageFormatter {
             try {
                 result = this.miniMessage.deserialize(processedTemplate);
             } catch (final Exception exception) {
-                LOGGER.log(Level.WARNING, "MiniMessage parsing failed, using plain text", exception);
+                LOGGER.log(
+                        Level.WARNING,
+                        TranslationLogger.message(
+                                "MiniMessage parsing failed, using plain text",
+                                Map.of("template", template)
+                        ),
+                        exception
+                );
                 result = Component.text(processedTemplate);
             }
         } else {
@@ -253,12 +292,26 @@ public class HybridMessageFormatter implements MessageFormatter {
             try {
                 return new MessageFormat(template, locale);
             } catch (final IllegalArgumentException exception) {
-                LOGGER.log(Level.WARNING, "Invalid MessageFormat pattern: " + template, exception);
+                LOGGER.log(
+                        Level.WARNING,
+                        TranslationLogger.message(
+                                "Invalid MessageFormat pattern",
+                                Map.of("template", template)
+                        ),
+                        exception
+                );
                 try {
                     final String fallbackTemplate = createFallbackTemplate(template);
                     return new MessageFormat(fallbackTemplate, locale);
                 } catch (final Exception fallbackException) {
-                    LOGGER.log(Level.WARNING, "Fallback MessageFormat creation failed", fallbackException);
+                    LOGGER.log(
+                            Level.WARNING,
+                            TranslationLogger.message(
+                                    "Fallback MessageFormat creation failed",
+                                    Map.of("template", template)
+                            ),
+                            fallbackException
+                    );
                     return new MessageFormat("{0}", locale);
                 }
             }
@@ -289,7 +342,10 @@ public class HybridMessageFormatter implements MessageFormatter {
 
     @NotNull
     private String formatWithFallback(@NotNull final String template, @NotNull final List<Placeholder> placeholders) {
-        LOGGER.info("Using fallback formatting for template: " + template);
+        LOGGER.fine(() -> TranslationLogger.message(
+                "Using fallback formatting for template",
+                Map.of("template", template)
+        ));
         String result = template;
 
         for (int i = 0; i < placeholders.size(); i++) {

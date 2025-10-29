@@ -1,5 +1,6 @@
 package de.jexcellence.jextranslate.api;
 
+import de.jexcellence.jextranslate.util.TranslationLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.entity.Player;
@@ -34,15 +35,16 @@ import java.util.logging.Logger;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 public class TranslationService {
 
-    private static final Logger LOGGER = Logger.getLogger(TranslationService.class.getName());
+    private static final Logger LOGGER = TranslationLogger.getLogger(TranslationService.class);
     private static final TranslationKey DEFAULT_PREFIX_KEY = TranslationKey.of("prefix");
     private static final Map<String, Locale> LOCALE_CACHE = new ConcurrentHashMap<>();
 
     private static volatile ServiceConfiguration configuration;
+    private static volatile boolean debugLoggingEnabled;
 
     private final TranslationKey key;
     private final Player player;
@@ -150,6 +152,29 @@ public class TranslationService {
     }
 
     /**
+     * Enables verbose debug logging for locale resolution and cache invalidation events.
+     */
+    public static void enableDebugLogging() {
+        debugLoggingEnabled = true;
+    }
+
+    /**
+     * Disables verbose debug logging previously enabled via {@link #enableDebugLogging()}.
+     */
+    public static void disableDebugLogging() {
+        debugLoggingEnabled = false;
+    }
+
+    /**
+     * Indicates whether debug logging is active.
+     *
+     * @return {@code true} when debug logging is enabled
+     */
+    public static boolean isDebugLoggingEnabled() {
+        return debugLoggingEnabled;
+    }
+
+    /**
      * Clears every cached locale entry. This should be triggered whenever the {@link LocaleResolver} state changes
      * (for example via in-game locale commands) or when the backing {@link TranslationRepository} is reloaded.
      */
@@ -168,7 +193,10 @@ public class TranslationService {
         final String cacheKey = player.getUniqueId().toString();
         final Locale removed = LOCALE_CACHE.remove(cacheKey);
         if (removed != null) {
-            LOGGER.fine("Cleared locale cache for player " + player.getName() + " (was: " + removed + ")");
+            debug("Cleared locale cache for player", Map.of(
+                    "player", TranslationLogger.anonymize(player.getUniqueId()),
+                    "previousLocale", removed.toString()
+            ));
         }
     }
 
@@ -197,10 +225,22 @@ public class TranslationService {
             final String cacheKey = player.getUniqueId().toString();
             return LOCALE_CACHE.computeIfAbsent(cacheKey, key -> {
                 final Optional<Locale> playerLocale = configuration.localeResolver().resolveLocale(player);
-                return playerLocale.orElseGet(() -> configuration.localeResolver().getDefaultLocale());
+                final Locale resolved = playerLocale.orElseGet(() -> configuration.localeResolver().getDefaultLocale());
+                debug("Resolved player locale", Map.of(
+                        "player", TranslationLogger.anonymize(player.getUniqueId()),
+                        "locale", resolved.toString()
+                ));
+                return resolved;
             });
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to resolve locale for player " + player.getName(), exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to resolve player locale",
+                            Map.of("player", TranslationLogger.anonymize(player.getUniqueId()))
+                    ),
+                    exception
+            );
             return configuration.repository().getDefaultLocale();
         }
     }
@@ -308,7 +348,14 @@ public class TranslationService {
 
             return new TranslatedMessage(mainComponent, this.key);
         } catch (final Exception exception) {
-            LOGGER.log(Level.SEVERE, "Unexpected error building message for key: " + this.key, exception);
+            LOGGER.log(
+                    Level.SEVERE,
+                    TranslationLogger.message(
+                            "Unexpected error building translated message",
+                            Map.of("key", this.key.key())
+                    ),
+                    exception
+            );
             return createFallbackMessage(exception);
         }
     }
@@ -383,12 +430,22 @@ public class TranslationService {
      */
     @Nullable
     private Component buildPrefixComponent() {
+        final TranslationKey prefixKey = this.customPrefixKey != null ? this.customPrefixKey : DEFAULT_PREFIX_KEY;
         try {
-            final TranslationKey prefixKey = this.customPrefixKey != null ? this.customPrefixKey : DEFAULT_PREFIX_KEY;
             final Optional<String> prefixTranslation = configuration.repository().getTranslation(prefixKey, this.locale);
             return prefixTranslation.map(s -> configuration.formatter().formatComponent(s, this.placeholders, this.locale)).orElse(null);
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to build prefix component", exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to build prefix component",
+                            Map.of(
+                                    "key", this.key.key(),
+                                    "prefixKey", prefixKey.key()
+                            )
+                    ),
+                    exception
+            );
             return null;
         }
     }
@@ -403,6 +460,12 @@ public class TranslationService {
     private TranslatedMessage createFallbackMessage(@NotNull final Exception cause) {
         final String fallbackText = String.format("[Error: %s] %s", cause.getClass().getSimpleName(), this.key.key());
         return new TranslatedMessage(Component.text(fallbackText), this.key);
+    }
+
+    private static void debug(@NotNull final String message, @NotNull final Map<String, ?> context) {
+        if (debugLoggingEnabled) {
+            LOGGER.fine(() -> TranslationLogger.message(message, context));
+        }
     }
 
     /**

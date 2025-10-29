@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -24,11 +25,11 @@ import java.util.logging.Logger;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 public class DebugUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(DebugUtils.class.getName());
+    private static final Logger LOGGER = TranslationLogger.getLogger(DebugUtils.class);
 
     private DebugUtils() {
         throw new UnsupportedOperationException("Utility class");
@@ -99,7 +100,14 @@ public class DebugUtils {
 
         } catch (final Exception exception) {
             debug.append("ERROR during debug: ").append(exception.getClass().getSimpleName()).append(": ").append(exception.getMessage()).append("\n");
-            LOGGER.warning("Error during translation debug: " + exception.getMessage());
+            LOGGER.log(
+                    java.util.logging.Level.WARNING,
+                    TranslationLogger.message(
+                            "Error during translation debug",
+                            Map.of("error", exception.getClass().getSimpleName())
+                    ),
+                    exception
+            );
         }
 
         debug.append("=== End Debug Report ===");
@@ -173,7 +181,14 @@ public class DebugUtils {
             status.append("Refresh completed successfully");
         } catch (final Exception exception) {
             status.append("ERROR during refresh: ").append(exception.getMessage());
-            LOGGER.warning("Error during force refresh: " + exception.getMessage());
+            LOGGER.log(
+                    java.util.logging.Level.WARNING,
+                    TranslationLogger.message(
+                            "Error during force refresh",
+                            Map.of("error", exception.getClass().getSimpleName())
+                    ),
+                    exception
+            );
         }
 
         return status.toString();
