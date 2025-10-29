@@ -140,16 +140,21 @@ public class YamlTranslationRepository implements TranslationRepository {
             Files.createDirectories(file.getParent());
             createBackupIfNeeded(file, "ensure-translation");
             final boolean fileExists = Files.exists(file);
-            final StringBuilder entryBuilder = new StringBuilder();
-            if (fileExists) {
-                entryBuilder.append(System.lineSeparator());
+            final Yaml yaml = new Yaml();
+            final Map<String, Object> data = fileExists ? yaml.load(Files.newInputStream(file)) : new LinkedHashMap<>();
+            final Map<String, Object> effectiveData = data == null ? new LinkedHashMap<>() : data;
+
+            // Un-flatten the key and insert it into the map
+            Map<String, Object> current = effectiveData;
+            String[] keyParts = key.key().split("\\.");
+            for (int i = 0; i < keyParts.length - 1; i++) {
+                current = (Map<String, Object>) current.computeIfAbsent(keyParts[i], k -> new LinkedHashMap<>());
             }
-            entryBuilder.append(key.key())
-                    .append(": \"")
-                    .append(escapeYaml(defaultValue))
-                    .append("\"")
-                    .append(System.lineSeparator());
-            Files.writeString(file, entryBuilder.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            current.put(keyParts[keyParts.length - 1], defaultValue);
+
+            try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+                yaml.dump(effectiveData, writer);
+            }
             this.lastModified = System.currentTimeMillis();
             notifyTranslationLoaded(key, locale, defaultValue);
             return true;
