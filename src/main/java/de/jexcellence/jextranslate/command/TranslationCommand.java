@@ -6,6 +6,8 @@ import de.jexcellence.jextranslate.api.MissingKeyTracker;
 import de.jexcellence.jextranslate.api.TranslationKey;
 import de.jexcellence.jextranslate.api.TranslationRepository;
 import de.jexcellence.jextranslate.api.TranslationService;
+import de.jexcellence.jextranslate.util.TranslationBackupService;
+import de.jexcellence.jextranslate.util.TranslationLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -57,11 +59,12 @@ import java.util.stream.Collectors;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.3
  */
 public class TranslationCommand implements CommandExecutor, TabCompleter, Listener {
 
-    private static final Logger LOGGER = Logger.getLogger(TranslationCommand.class.getName());
+    private static final Logger LOGGER = TranslationLogger.getLogger(TranslationCommand.class);
+    private static final String YAML_EXTENSION = ".yml";
     private static final String PERMISSION_BASE = "jextranslate.admin";
     private static final String PERMISSION_MISSING = PERMISSION_BASE + ".missing";
     private static final String PERMISSION_ADD = PERMISSION_BASE + ".add";
@@ -99,7 +102,10 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
         this.localeResolver = Objects.requireNonNull(localeResolver, "Locale resolver cannot be null");
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        LOGGER.info("TranslationCommand initialized");
+        LOGGER.info(() -> TranslationLogger.message(
+                "TranslationCommand initialized",
+                Map.of("plugin", plugin.getName())
+        ));
     }
 
     @Override
@@ -248,7 +254,14 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
             TranslationService.clearLocaleCache();
             sender.sendMessage(Component.text("Translations reloaded and caches cleared!").color(NamedTextColor.GREEN));
         }).exceptionally(throwable -> {
-            LOGGER.log(Level.WARNING, "Failed to reload translations", throwable);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to reload translations",
+                            Map.of("subcommand", "reload")
+                    ),
+                    throwable
+            );
             sender.sendMessage(Component.text("Failed to reload translations: " + throwable.getMessage()).color(NamedTextColor.RED));
             return null;
         });
@@ -257,8 +270,8 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
     }
 
     /**
-     * Handles the {@code /translate backup} sub-command. The current implementation is a placeholder for actual backup
-     * logic and communicates success or failure to the sender.
+     * Handles the {@code /translate backup} sub-command, creating timestamped copies of translation files for one or
+     * more locales using {@link TranslationBackupService}.
      *
      * @param sender command executor
      * @param args   command arguments
@@ -270,17 +283,112 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
             return true;
         }
 
-        final Locale targetLocale = args.length > 1 ? parseLocale(args[1]) : Locale.ENGLISH;
-        sender.sendMessage(Component.text("Creating backup for locale: " + targetLocale).color(NamedTextColor.YELLOW));
+        final boolean backupAll = args.length > 1 && "all".equalsIgnoreCase(args[1]);
+        final List<Locale> localesToBackup = new ArrayList<>();
+
+        if (backupAll) {
+            localesToBackup.addAll(repository.getAvailableLocales());
+        } else {
+            final Locale locale = args.length > 1 ? parseLocale(args[1]) : repository.getDefaultLocale();
+            localesToBackup.add(locale);
+        }
+
+        if (localesToBackup.isEmpty()) {
+            sender.sendMessage(Component.text("No locales available for backup.").color(NamedTextColor.RED));
+            return true;
+        }
+
+        final TranslationRepository.RepositoryMetadata metadata = repository.getMetadata();
+        if (!"yaml".equalsIgnoreCase(metadata.getType())) {
+            sender.sendMessage(Component.text("Manual backups are only supported for YAML repositories.").color(NamedTextColor.RED));
+            return true;
+        }
+
+        final String directoryProperty = metadata.getProperty("directory");
+        if (directoryProperty == null || directoryProperty.isEmpty()) {
+            sender.sendMessage(Component.text("Translation repository directory is not available.").color(NamedTextColor.RED));
+            return true;
+        }
+
+        final Path translationsPath;
+        try {
+            translationsPath = Path.of(directoryProperty);
+        } catch (final Exception exception) {
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Invalid translation directory for manual backup",
+                            Map.of("directory", directoryProperty)
+                    ),
+                    exception
+            );
+            sender.sendMessage(Component.text("Failed to resolve translation directory. See console for details.").color(NamedTextColor.RED));
+            return true;
+        }
+
+        localesToBackup.sort(Comparator.comparing(this::toLocaleTag));
+        final List<Locale> locales = List.copyOf(localesToBackup);
+        final String descriptor = backupAll ? "all locales" : toLocaleTag(locales.get(0));
+
+        sender.sendMessage(Component.text("Preparing backup for " + descriptor + "...").color(NamedTextColor.YELLOW));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            try {
-                final Path backupPath = Path.of("backups"); // Implement actual backup logic
-                sender.sendMessage(Component.text("Backup created successfully!").color(NamedTextColor.GREEN));
-            } catch (final Exception exception) {
-                LOGGER.log(Level.WARNING, "Failed to create backup", exception);
-                sender.sendMessage(Component.text("Failed to create backup: " + exception.getMessage()).color(NamedTextColor.RED));
+            final TranslationBackupService backupService = new TranslationBackupService(translationsPath);
+            final List<Component> resultLines = new ArrayList<>();
+
+            for (final Locale locale : locales) {
+                final Path localeFile = resolveLocaleFile(translationsPath, locale);
+                try {
+                    final Optional<Path> backupPath = backupService.createBackup(localeFile, "manual-command");
+                    if (backupPath.isPresent()) {
+                        final Path created = backupPath.get();
+                        LOGGER.info(() -> TranslationLogger.message(
+                                "Manual translation backup created",
+                                Map.of(
+                                        "locale", toLocaleTag(locale),
+                                        "source", localeFile.toAbsolutePath().toString(),
+                                        "backup", created.toAbsolutePath().toString()
+                                )
+                        ));
+                        resultLines.add(Component.text()
+                                .append(Component.text("✔ ").color(NamedTextColor.GREEN))
+                                .append(Component.text(toLocaleTag(locale) + " -> ").color(NamedTextColor.GRAY))
+                                .append(Component.text(created.getFileName().toString()).color(NamedTextColor.WHITE))
+                                .build());
+                    } else {
+                        resultLines.add(Component.text()
+                                .append(Component.text("✖ ").color(NamedTextColor.RED))
+                                .append(Component.text(toLocaleTag(locale) + " - source file not found").color(NamedTextColor.GRAY))
+                                .build());
+                    }
+                } catch (final IOException exception) {
+                    LOGGER.log(
+                            Level.WARNING,
+                            TranslationLogger.message(
+                                    "Manual translation backup failed",
+                                    Map.of(
+                                            "locale", toLocaleTag(locale),
+                                            "file", localeFile.toAbsolutePath().toString()
+                                    )
+                            ),
+                            exception
+                    );
+                    resultLines.add(Component.text()
+                            .append(Component.text("✖ ").color(NamedTextColor.RED))
+                            .append(Component.text(toLocaleTag(locale) + " - error: " + exception.getMessage()).color(NamedTextColor.GRAY))
+                            .build());
+                }
             }
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (resultLines.isEmpty()) {
+                    sender.sendMessage(Component.text("No translation files were eligible for backup.").color(NamedTextColor.RED));
+                    return;
+                }
+
+                sender.sendMessage(Component.text("=== Backup Results ===").color(NamedTextColor.GOLD));
+                resultLines.forEach(sender::sendMessage);
+            });
         });
 
         return true;
@@ -539,7 +647,18 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
                     player.sendMessage(successMessage);
                 });
             } catch (final Exception exception) {
-                LOGGER.log(Level.WARNING, "Failed to save translation", exception);
+                LOGGER.log(
+                        Level.WARNING,
+                        TranslationLogger.message(
+                                "Failed to save translation",
+                                Map.of(
+                                        "player", TranslationLogger.anonymize(player.getUniqueId()),
+                                        "key", session.key.key(),
+                                        "locale", session.locale.toString()
+                                )
+                        ),
+                        exception
+                );
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     player.sendMessage(Component.text("Failed to save translation: " + exception.getMessage()).color(NamedTextColor.RED));
                 });
@@ -563,14 +682,37 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
             .append(Component.text("/translate reload").color(NamedTextColor.YELLOW))
             .append(Component.text(" - Reload translations").color(NamedTextColor.GRAY))
             .append(Component.newline())
-            .append(Component.text("/translate backup [locale]").color(NamedTextColor.YELLOW))
-            .append(Component.text(" - Create backup").color(NamedTextColor.GRAY))
+            .append(Component.text("/translate backup [locale|all]").color(NamedTextColor.YELLOW))
+            .append(Component.text(" - Create translation backups").color(NamedTextColor.GRAY))
             .append(Component.newline())
             .append(Component.text("/translate info").color(NamedTextColor.YELLOW))
             .append(Component.text(" - System information").color(NamedTextColor.GRAY))
             .build();
 
         sender.sendMessage(usage);
+    }
+
+    @NotNull
+    private Path resolveLocaleFile(@NotNull final Path directory, @NotNull final Locale locale) {
+        Objects.requireNonNull(directory, "Directory cannot be null");
+        Objects.requireNonNull(locale, "Locale cannot be null");
+        return directory.resolve(toLocaleTag(locale) + YAML_EXTENSION);
+    }
+
+    @NotNull
+    private String toLocaleTag(@NotNull final Locale locale) {
+        Objects.requireNonNull(locale, "Locale cannot be null");
+        final String raw = locale.toString();
+        if (raw != null && !raw.isEmpty()) {
+            return raw;
+        }
+        final String language = locale.getLanguage();
+        if (language != null && !language.isEmpty()) {
+            return language;
+        }
+        final Locale defaultLocale = repository.getDefaultLocale();
+        final String fallback = defaultLocale.toString();
+        return fallback.isEmpty() ? defaultLocale.getLanguage() : fallback;
     }
 
     @NotNull
@@ -591,7 +733,10 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
                 return new Locale(parts[0].toLowerCase(), parts[1].toUpperCase());
             }
         } catch (final Exception exception) {
-            LOGGER.fine("Failed to parse locale: " + localeString);
+            LOGGER.fine(() -> TranslationLogger.message(
+                    "Failed to parse locale",
+                    Map.of("input", localeString)
+            ));
         }
         return Locale.ENGLISH;
     }
@@ -609,6 +754,20 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
             return missingKeyTracker.getLocalesWithMissingKeys().stream()
                 .map(Locale::toString)
                 .filter(locale -> locale.startsWith(args[1].toLowerCase()))
+                .collect(Collectors.toList());
+        }
+
+        if (args.length == 2 && "backup".equalsIgnoreCase(args[0])) {
+            final String prefix = args[1].toLowerCase(Locale.ROOT);
+            final List<String> suggestions = new ArrayList<>();
+            suggestions.add("all");
+            repository.getAvailableLocales().stream()
+                .map(this::toLocaleTag)
+                .forEach(suggestions::add);
+            return suggestions.stream()
+                .filter(value -> value.toLowerCase(Locale.ROOT).startsWith(prefix))
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
                 .collect(Collectors.toList());
         }
 

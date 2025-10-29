@@ -2,6 +2,7 @@ package de.jexcellence.jextranslate.impl;
 
 import de.jexcellence.jextranslate.api.MessageFormatter;
 import de.jexcellence.jextranslate.api.Placeholder;
+import de.jexcellence.jextranslate.util.TranslationLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -11,7 +12,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,12 +29,30 @@ import java.util.regex.Pattern;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.3
  */
 public class MiniMessageFormatter implements MessageFormatter {
 
+    private static final Logger LOGGER = TranslationLogger.getLogger(MiniMessageFormatter.class);
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([a-zA-Z0-9_-]+)}");
+
+    private final List<TagResolver> globalResolvers = new CopyOnWriteArrayList<>();
     private FormattingStrategy strategy = FormattingStrategy.MINI_MESSAGE;
+
+    /**
+     * Creates a formatter using {@link FormattingStrategy#MINI_MESSAGE}.
+     */
+    public MiniMessageFormatter() {
+    }
+
+    /**
+     * Creates a formatter with the supplied strategy.
+     *
+     * @param strategy the initial formatting strategy to apply
+     */
+    public MiniMessageFormatter(@NotNull final FormattingStrategy strategy) {
+        this.strategy = Objects.requireNonNull(strategy, "Strategy cannot be null");
+    }
 
     @Override
     @NotNull
@@ -39,12 +62,7 @@ public class MiniMessageFormatter implements MessageFormatter {
         Objects.requireNonNull(locale, "Locale cannot be null");
 
         try {
-            String result = template;
-            for (final Placeholder placeholder : placeholders) {
-                final String key = "{" + placeholder.key() + "}";
-                result = result.replace(key, placeholder.asText());
-            }
-            return result;
+            return applyPlainPlaceholderReplacement(template, placeholders);
         } catch (final Exception exception) {
             throw new FormattingException("Failed to format text", template, placeholders, exception);
         }
@@ -58,17 +76,27 @@ public class MiniMessageFormatter implements MessageFormatter {
         Objects.requireNonNull(locale, "Locale cannot be null");
 
         try {
-            String processedTemplate = template;
-            for (final Placeholder placeholder : placeholders) {
-                final String key = "{" + placeholder.key() + "}";
-                processedTemplate = processedTemplate.replace(key, placeholder.asText());
+            if (this.strategy != FormattingStrategy.MINI_MESSAGE
+                    && !containsMiniMessageMarkup(template)
+                    && !hasComponentPlaceholders(placeholders)) {
+                final String formatted = formatText(template, placeholders, locale);
+                return Component.text(formatted);
             }
 
-            return MiniMessage.builder()
-                .tags(TagResolver.resolver(StandardTags.defaults()))
-                .build()
-                .deserialize(processedTemplate);
+            final TagResolver resolver = resolveTagResolvers(placeholders);
+            final MiniMessage miniMessage = MiniMessage.builder()
+                    .tags(resolver)
+                    .build();
+            return miniMessage.deserialize(template);
         } catch (final Exception exception) {
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "MiniMessage formatting failed",
+                            Map.of("template", template)
+                    ),
+                    exception
+            );
             return Component.text(template);
         }
     }
@@ -110,6 +138,86 @@ public class MiniMessageFormatter implements MessageFormatter {
     @Override
     public void setStrategy(@NotNull final FormattingStrategy strategy) {
         this.strategy = Objects.requireNonNull(strategy, "Strategy cannot be null");
+    }
+
+    /**
+     * Registers an additional {@link TagResolver} that should be applied to every MiniMessage render.
+     *
+     * @param resolver the resolver to register
+     */
+    public void registerGlobalResolver(@NotNull final TagResolver resolver) {
+        this.globalResolvers.add(Objects.requireNonNull(resolver, "Resolver cannot be null"));
+    }
+
+    /**
+     * Removes all previously registered global resolvers.
+     */
+    public void clearGlobalResolvers() {
+        this.globalResolvers.clear();
+    }
+
+    /**
+     * Returns the currently registered global resolvers.
+     *
+     * @return immutable snapshot of global resolvers
+     */
+    @NotNull
+    public List<TagResolver> getGlobalResolvers() {
+        return List.copyOf(this.globalResolvers);
+    }
+
+    private String applyPlainPlaceholderReplacement(@NotNull final String template, @NotNull final List<Placeholder> placeholders) {
+        String result = template;
+        for (final Placeholder placeholder : placeholders) {
+            final String key = "{" + placeholder.key() + "}";
+            result = result.replace(key, placeholder.asText());
+        }
+        return result;
+    }
+
+    @NotNull
+    private TagResolver resolveTagResolvers(@NotNull final List<Placeholder> placeholders) {
+        final TagResolver.Builder builder = TagResolver.builder();
+        builder.resolver(StandardTags.defaults());
+        for (final TagResolver resolver : this.globalResolvers) {
+            builder.resolver(resolver);
+        }
+        for (final Placeholder placeholder : placeholders) {
+            addPlaceholderResolver(builder, placeholder);
+        }
+        return builder.build();
+    }
+
+    private void addPlaceholderResolver(@NotNull final TagResolver.Builder builder, @NotNull final Placeholder placeholder) {
+        if (placeholder.type() == Placeholder.PlaceholderType.RICH_TEXT) {
+            final Component component = placeholder.asComponent();
+            builder.resolver(net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component(placeholder.key(), component));
+            return;
+        }
+        final String escapedValue = escapeValue(placeholder.asText());
+        builder.resolver(net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed(placeholder.key(), escapedValue));
+    }
+
+    private boolean hasComponentPlaceholders(@NotNull final List<Placeholder> placeholders) {
+        for (final Placeholder placeholder : placeholders) {
+            if (placeholder.type() == Placeholder.PlaceholderType.RICH_TEXT) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsMiniMessageMarkup(@NotNull final String template) {
+        final int open = template.indexOf('<');
+        final int close = template.indexOf('>');
+        return open >= 0 && close > open;
+    }
+
+    @NotNull
+    private String escapeValue(@NotNull final String value) {
+        return value
+                .replace("<", "\\<")
+                .replace(">", "\\>");
     }
 
     /**

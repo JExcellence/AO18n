@@ -1,5 +1,6 @@
 package de.jexcellence.jextranslate.api;
 
+import de.jexcellence.jextranslate.util.TranslationLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,11 +30,11 @@ import java.util.logging.Logger;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 public record TranslatedMessage(@NotNull Component component, @NotNull TranslationKey originalKey) {
 
-    private static final Logger LOGGER = Logger.getLogger(TranslatedMessage.class.getName());
+    private static final Logger LOGGER = TranslationLogger.getLogger(TranslatedMessage.class);
 
     /**
      * Creates a translated message ensuring neither component nor key are {@code null}.
@@ -75,7 +77,17 @@ public record TranslatedMessage(@NotNull Component component, @NotNull Translati
         try {
             player.sendMessage(this.component);
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to send message to player " + player.getName() + " for key " + this.originalKey, exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to send chat message",
+                            Map.of(
+                                    "player", TranslationLogger.anonymize(player.getUniqueId()),
+                                    "key", this.originalKey.key()
+                            )
+                    ),
+                    exception
+            );
             sendLegacyFallback(player);
         }
     }
@@ -90,7 +102,17 @@ public record TranslatedMessage(@NotNull Component component, @NotNull Translati
         try {
             player.sendActionBar(this.component);
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to send action bar to player " + player.getName() + " for key " + this.originalKey, exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to send action bar",
+                            Map.of(
+                                    "player", TranslationLogger.anonymize(player.getUniqueId()),
+                                    "key", this.originalKey.key()
+                            )
+                    ),
+                    exception
+            );
         }
     }
 
@@ -132,7 +154,17 @@ public record TranslatedMessage(@NotNull Component component, @NotNull Translati
             );
             player.showTitle(title);
         } catch (final Exception exception) {
-            LOGGER.log(Level.WARNING, "Failed to send title to player " + player.getName() + " for key " + this.originalKey, exception);
+            LOGGER.log(
+                    Level.WARNING,
+                    TranslationLogger.message(
+                            "Failed to send title",
+                            Map.of(
+                                    "player", TranslationLogger.anonymize(player.getUniqueId()),
+                                    "key", this.originalKey.key()
+                            )
+                    ),
+                    exception
+            );
         }
     }
 

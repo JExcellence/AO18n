@@ -1,6 +1,7 @@
 package de.jexcellence.jextranslate.impl;
 
 import de.jexcellence.jextranslate.api.LocaleResolver;
+import de.jexcellence.jextranslate.util.TranslationLogger;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,11 +24,11 @@ import java.util.logging.Logger;
  *
  * @author JExcellence
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 public class LocaleResolverProvider {
 
-    private static final Logger LOGGER = Logger.getLogger(LocaleResolverProvider.class.getName());
+    private static final Logger LOGGER = TranslationLogger.getLogger(LocaleResolverProvider.class);
 
     private LocaleResolverProvider() {
         throw new UnsupportedOperationException("Utility class");
@@ -44,16 +45,25 @@ public class LocaleResolverProvider {
         Objects.requireNonNull(defaultLocale, "Default locale cannot be null");
 
         if (isModernApiAvailable()) {
-            LOGGER.info("Using modern Adventure API for locale detection");
+            LOGGER.info(() -> TranslationLogger.message(
+                    "Using modern Adventure API for locale detection",
+                    Map.of("defaultLocale", defaultLocale.toString())
+            ));
             return new ModernLocaleResolver(defaultLocale);
         }
 
         if (isLegacyApiAvailable()) {
-            LOGGER.info("Using legacy Bukkit API for locale detection");
+            LOGGER.info(() -> TranslationLogger.message(
+                    "Using legacy Bukkit API for locale detection",
+                    Map.of("defaultLocale", defaultLocale.toString())
+            ));
             return new LegacyLocaleResolver(defaultLocale);
         }
 
-        LOGGER.warning("No locale detection API available - using fallback");
+        LOGGER.warning(() -> TranslationLogger.message(
+                "No locale detection API available - using fallback",
+                Map.of("defaultLocale", defaultLocale.toString())
+        ));
         return new FallbackLocaleResolver(defaultLocale);
     }
 
@@ -145,7 +155,14 @@ public class LocaleResolverProvider {
                 final Locale clientLocale = player.locale();
                 return Optional.of(clientLocale);
             } catch (final Exception exception) {
-                LOGGER.log(Level.FINE, "Failed to get client locale for player " + player.getName(), exception);
+                LOGGER.log(
+                        Level.FINE,
+                        TranslationLogger.message(
+                                "Failed to resolve locale via modern API",
+                                Map.of("player", TranslationLogger.anonymize(player.getUniqueId()))
+                        ),
+                        exception
+                );
                 return Optional.of(this.defaultLocale);
             }
         }
@@ -175,7 +192,14 @@ public class LocaleResolverProvider {
                 final Locale clientLocale = parseLocaleString(localeString);
                 return Optional.of(clientLocale);
             } catch (final Exception exception) {
-                LOGGER.log(Level.FINE, "Failed to get client locale for player " + player.getName(), exception);
+                LOGGER.log(
+                        Level.FINE,
+                        TranslationLogger.message(
+                                "Failed to resolve locale via legacy API",
+                                Map.of("player", TranslationLogger.anonymize(player.getUniqueId()))
+                        ),
+                        exception
+                );
                 return Optional.of(this.defaultLocale);
             }
         }
