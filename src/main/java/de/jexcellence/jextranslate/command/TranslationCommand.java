@@ -703,13 +703,14 @@ public class TranslationCommand implements CommandExecutor, TabCompleter, Listen
     private String toLocaleTag(@NotNull final Locale locale) {
         Objects.requireNonNull(locale, "Locale cannot be null");
         final String raw = locale.toString();
-        if (raw != null && !raw.isEmpty()) {
+        if (!raw.isEmpty()) {
             return raw;
         }
         final String language = locale.getLanguage();
-        if (language != null && !language.isEmpty()) {
+        if (!language.isEmpty()) {
             return language;
         }
+        // Fallback to default locale if the provided locale is empty
         final Locale defaultLocale = repository.getDefaultLocale();
         final String fallback = defaultLocale.toString();
         return fallback.isEmpty() ? defaultLocale.getLanguage() : fallback;
