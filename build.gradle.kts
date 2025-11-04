@@ -1,5 +1,5 @@
 plugins {
-    java
+    id("java-library")
     `maven-publish`
 }
 
@@ -8,11 +8,17 @@ version = "3.0.0"
 description = "JExTranslate - Modern i18n API for Spigot/Bukkit/Paper"
 
 java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
     withSourcesJar()
     withJavadocJar()
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc"
@@ -28,12 +34,6 @@ dependencies {
     implementation("net.kyori:adventure-text-serializer-legacy:4.16.0")
     implementation("net.kyori:adventure-text-serializer-plain:4.16.0")
     implementation("org.yaml:snakeyaml:2.2")
-    
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.mockito:mockito-core:5.11.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
-    testImplementation("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
-    testImplementation("com.github.seeseemelk:MockBukkit-v1.20:3.72.0")
 }
 
 tasks.withType<JavaCompile> {
@@ -45,21 +45,6 @@ tasks.withType<JavaCompile> {
         "-Xlint:-processing",
         "-Xlint:-serial"
     ))
-}
-
-tasks.test {
-    useJUnitPlatform()
-    testLogging {
-        events("passed", "skipped", "failed")
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showExceptions = true
-        showCauses = true
-        showStackTraces = true
-    }
-    jvmArgs(
-        "-XX:+UseG1GC",
-        "-Xmx1G"
-    )
 }
 
 tasks.jar {

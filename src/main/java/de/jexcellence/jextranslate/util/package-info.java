@@ -46,8 +46,8 @@
  * }</pre>
  *
  * <p>Compose tokens declaratively: feed already formatted MiniMessage fragments through
- * {@link de.jexcellence.jextranslate.api.Placeholder#unparsed(String, String)} and supply
- * component-safe values via {@link de.jexcellence.jextranslate.api.Placeholder#component(String, net.kyori.adventure.text.Component)}.
+ * {@link de.jexcellence.jextranslate.api.Placeholder#of(java.lang.String, java.lang.String)} and supply
+ * component-safe values via {@link de.jexcellence.jextranslate.api.Placeholder#asComponent()} (String, net.kyori.adventure.text.Component)}.
  * This ensures MiniMessage output remains well-formed while keeping placeholder builders immutable.</p>
  */
 package de.jexcellence.jextranslate.util;
