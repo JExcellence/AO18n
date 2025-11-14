@@ -34,7 +34,8 @@ import java.util.regex.Pattern;
 public class MiniMessageFormatter implements MessageFormatter {
 
     private static final Logger LOGGER = TranslationLogger.getLogger(MiniMessageFormatter.class);
-    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([a-zA-Z0-9_-]+)}");
+    private static final Pattern PLACEHOLDER_PATTERN_BRACES = Pattern.compile("\\{([a-zA-Z0-9_-]+)}");
+    private static final Pattern PLACEHOLDER_PATTERN_PERCENT = Pattern.compile("%([a-zA-Z0-9_-]+)%");
 
     private final List<TagResolver> globalResolvers = new CopyOnWriteArrayList<>();
     private FormattingStrategy strategy = FormattingStrategy.MINI_MESSAGE;
@@ -83,11 +84,12 @@ public class MiniMessageFormatter implements MessageFormatter {
                 return Component.text(formatted);
             }
 
-            final TagResolver resolver = resolveTagResolvers(placeholders);
-            final MiniMessage miniMessage = MiniMessage.builder()
-                    .tags(resolver)
-                    .build();
-            return miniMessage.deserialize(template);
+            // First, replace placeholders in the template
+            final String processedTemplate = applyPlainPlaceholderReplacement(template, placeholders);
+
+            // Then parse with MiniMessage
+            final MiniMessage miniMessage = MiniMessage.miniMessage();
+            return miniMessage.deserialize(processedTemplate);
         } catch (final Exception exception) {
             LOGGER.log(
                     Level.WARNING,
@@ -110,9 +112,19 @@ public class MiniMessageFormatter implements MessageFormatter {
         final List<String> warnings = new ArrayList<>();
         final List<String> placeholderKeys = new ArrayList<>();
 
-        final Matcher matcher = PLACEHOLDER_PATTERN.matcher(template);
-        while (matcher.find()) {
-            placeholderKeys.add(matcher.group(1));
+        // Check for {placeholder} format
+        final Matcher braceMatcher = PLACEHOLDER_PATTERN_BRACES.matcher(template);
+        while (braceMatcher.find()) {
+            placeholderKeys.add(braceMatcher.group(1));
+        }
+
+        // Check for %placeholder% format
+        final Matcher percentMatcher = PLACEHOLDER_PATTERN_PERCENT.matcher(template);
+        while (percentMatcher.find()) {
+            final String key = percentMatcher.group(1);
+            if (!placeholderKeys.contains(key)) {
+                placeholderKeys.add(key);
+            }
         }
 
         int openBraces = 0;
@@ -169,8 +181,11 @@ public class MiniMessageFormatter implements MessageFormatter {
     private String applyPlainPlaceholderReplacement(@NotNull final String template, @NotNull final List<Placeholder> placeholders) {
         String result = template;
         for (final Placeholder placeholder : placeholders) {
-            final String key = "{" + placeholder.key() + "}";
-            result = result.replace(key, placeholder.asText());
+            // Support both {placeholder} and %placeholder% formats
+            final String braceKey = "{" + placeholder.key() + "}";
+            final String percentKey = "%" + placeholder.key() + "%";
+            result = result.replace(braceKey, placeholder.asText());
+            result = result.replace(percentKey, placeholder.asText());
         }
         return result;
     }

@@ -235,28 +235,52 @@ public record TranslatedMessage(@NotNull Component component, @NotNull Translati
 
     /**
      * Splits the message into individual line components, parsing MiniMessage segments when necessary.
+     * This method preserves MiniMessage formatting by serializing the component back to MiniMessage format,
+     * splitting by newlines, and then deserializing each line individually.
      *
      * @return list of components representing non-empty lines
      */
     @NotNull
     public List<Component> splitLines() {
-        final String text = asPlainText();
-        if (text.isEmpty()) {
+        // Try to serialize the component back to MiniMessage format to preserve formatting
+        final String miniMessageText;
+        try {
+            miniMessageText = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().serialize(this.component);
+        } catch (final Exception exception) {
+            // Fallback to plain text if serialization fails
+            final String plainText = asPlainText();
+            if (plainText.isEmpty()) {
+                return List.of();
+            }
+            final String[] lines = plainText.split("\\n");
+            final List<Component> components = new ArrayList<>();
+            for (final String line : lines) {
+                if (!line.trim().isEmpty()) {
+                    components.add(Component.text(line));
+                }
+            }
+            return components;
+        }
+
+        if (miniMessageText.isEmpty()) {
             return List.of();
         }
 
-        final String[] lines = text.split("\\n");
+        final String[] lines = miniMessageText.split("\\n");
         final List<Component> components = new ArrayList<>();
 
         for (final String line : lines) {
             if (!line.trim().isEmpty()) {
                 try {
-                    if (line.contains("<") && line.contains(">")) {
-                        components.add(MiniMessage.miniMessage().deserialize(line));
-                    } else {
-                        components.add(Component.text(line));
-                    }
+                    // Parse each line as MiniMessage to preserve formatting
+                    components.add(MiniMessage.miniMessage().deserialize(line));
                 } catch (final Exception exception) {
+                    // Fallback to plain text if parsing fails
+                    LOGGER.log(
+                            Level.FINE,
+                            "Failed to parse line as MiniMessage, using plain text: " + line,
+                            exception
+                    );
                     components.add(Component.text(line));
                 }
             }
