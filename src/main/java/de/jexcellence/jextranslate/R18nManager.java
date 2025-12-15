@@ -161,6 +161,9 @@ public final class R18nManager {
 
                 int languageCount = translationLoader.getLoadedLocales().size();
                 int keyCount = translationLoader.getTotalKeyCount();
+                
+                // Modern mode requires both version support AND audiences being available
+                boolean modernMode = versionDetector.isModern() && audiences != null;
 
                 logger.info(String.format(
                         "R18n initialized successfully! Loaded %d languages with %d translation keys. " +
@@ -169,7 +172,7 @@ public final class R18nManager {
                         keyCount,
                         versionDetector.getServerType(),
                         versionDetector.getMinecraftVersion(),
-                        versionDetector.isModern()
+                        modernMode
                 ));
 
             } catch (Exception e) {
@@ -428,15 +431,17 @@ public final class R18nManager {
     }
 
     /**
-     * Initializes the Adventure platform.
+     * Initializes the Adventure platform with graceful fallback.
      */
     private void initializeAdventure() {
         try {
+            // Try to create BukkitAudiences - this may fail if adventure-platform-bukkit is not available
             audiences = BukkitAudiences.create(plugin);
             logger.info("Adventure platform initialized for " + versionDetector.getServerType());
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to initialize Adventure platform", e);
-            throw new RuntimeException("Adventure initialization failed", e);
+        } catch (NoClassDefFoundError | Exception e) {
+            // Gracefully handle missing BukkitAudiences - fall back to legacy mode
+            logger.info("Adventure platform not available, using legacy mode: " + e.getMessage());
+            audiences = null;
         }
     }
 
