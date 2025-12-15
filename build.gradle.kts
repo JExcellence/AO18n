@@ -10,16 +10,41 @@ ext["vendor"] = "JExcellence"
 
 dependencies {
     compileOnly(libs.paper.api)
-    compileOnly("org.jetbrains:annotations:24.1.0")
+
+    compileOnly(libs.jexcommand)
+    compileOnly(libs.bundles.jeconfig)
     
-    implementation(libs.adventure.api)
-    implementation(libs.adventure.minimessage)
-    implementation(libs.adventure.serializer.legacy)
-    implementation(libs.adventure.serializer.plain)
-    implementation("org.yaml:snakeyaml:2.2")
+    compileOnly(libs.adventure.api)
+    compileOnly(libs.adventure.minimessage)
+    compileOnly(libs.adventure.serializer.legacy)
+    compileOnly(libs.adventure.serializer.plain)
+    compileOnly(libs.adventure.platform.bukkit)
+    compileOnly("org.yaml:snakeyaml:2.2")
+
+    compileOnly(libs.caffeine)
+    compileOnly(libs.jackson.core)
+    compileOnly(libs.jackson.databind)
+    compileOnly(libs.jackson.annotations)
+    compileOnly(libs.jackson.jsr310)
+
+    compileOnly(platform(libs.hibernate.platform))
+    compileOnly(libs.bundles.hibernate)
+    compileOnly(libs.jehibernate)
+    
+    // Test dependencies
+    testImplementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
+    testImplementation(libs.paper.api)
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
+    
     jar {
         archiveBaseName.set("jextranslate")
         manifest {

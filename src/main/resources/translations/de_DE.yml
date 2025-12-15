@@ -1,0 +1,27 @@
+# German (Germany) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Willkommen zurück, {player}!</green> <gray>({online} Spieler online)</gray>"
+  first-join: "<yellow>Willkommen auf dem Server, {player}!</yellow> <gray>Dies ist dein erster Besuch!</gray>"
+  tutorial: "<gradient:gold:yellow>Willkommen auf dem Server!</gradient>"
+
+coins:
+  balance: "Du hast <gold>{amount}</gold> Münzen"
+  info: "Münzen: {coins}"
+
+lang:
+  current: "Deine aktuelle Sprache ist: <yellow>{locale}</yellow>"
+  available: "Verfügbare Sprachen: <gray>{locales}</gray>"
+  changed: "Sprache geändert zu: <green>{locale}</green>"
+  error: "<red>Fehler beim Ändern der Sprache. Sprachspeicherung nicht unterstützt.</red>"
+
+reload:
+  starting: "Übersetzungen werden neu geladen..."
+  complete: "<green>Übersetzungen neu geladen!</green> <gray>({locales} Sprachen, {keys} Schlüssel)</gray>"
+
+error:
+  no-permission: "<red>Du hast keine Berechtigung für diesen Befehl.</red>"
+  player-only: "<red>Dieser Befehl kann nur von Spielern verwendet werden.</red>"
+  invalid-usage: "<red>Ungültige Verwendung. Nutze: {usage}</red>"

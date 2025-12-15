@@ -77,20 +77,12 @@ public final class TranslationBackupService {
 
         Files.createDirectories(this.backupRoot);
 
-        final String baseName = source.getFileName().toString();
-        final String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
-        final Path backupFile = this.backupRoot.resolve(baseName + "." + timestamp + ".bak");
+        var baseName = source.getFileName().toString();
+        var timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
+        var backupFile = this.backupRoot.resolve(baseName + "." + timestamp + ".bak");
 
         Files.copy(source, backupFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-
-        LOGGER.info(() -> TranslationLogger.message(
-            "Created translation backup",
-            Map.of(
-                "source", source.toAbsolutePath().toString(),
-                "backup", backupFile.toAbsolutePath().toString(),
-                "reason", reason
-            )
-        ));
+        LOGGER.info(() -> TranslationLogger.message("Created backup", Map.of("source", source.toString(), "backup", backupFile.toString(), "reason", reason)));
 
         pruneBackups(baseName);
 
@@ -98,34 +90,19 @@ public final class TranslationBackupService {
     }
 
     private void pruneBackups(@NotNull final String baseName) {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(this.backupRoot, baseName + ".*.bak")) {
-            final List<Path> backups = new ArrayList<>();
-            for (final Path path : stream) {
-                backups.add(path);
-            }
-
+        try (var stream = Files.newDirectoryStream(this.backupRoot, baseName + ".*.bak")) {
+            var backups = new ArrayList<Path>();
+            stream.forEach(backups::add);
             backups.sort(Comparator.comparing(Path::getFileName).reversed());
 
-            for (int index = this.retention; index < backups.size(); index++) {
-                final Path obsolete = backups.get(index);
-                Files.deleteIfExists(obsolete);
-                LOGGER.fine(() -> TranslationLogger.message(
-                    "Pruned stale translation backup",
-                    Map.of(
-                        "backup", obsolete.toAbsolutePath().toString(),
-                        "baseName", baseName
-                    )
-                ));
-            }
-        } catch (final IOException exception) {
-            LOGGER.log(
-                Level.FINE,
-                TranslationLogger.message(
-                    "Failed to prune translation backups",
-                    Map.of("baseName", baseName)
-                ),
-                exception
-            );
+            backups.stream().skip(this.retention).forEach(obsolete -> {
+                try {
+                    Files.deleteIfExists(obsolete);
+                    LOGGER.fine(() -> TranslationLogger.message("Pruned stale backup", Map.of("backup", obsolete.toString())));
+                } catch (IOException ignored) {}
+            });
+        } catch (IOException e) {
+            LOGGER.log(Level.FINE, TranslationLogger.message("Failed to prune backups", Map.of("baseName", baseName)), e);
         }
     }
 }
