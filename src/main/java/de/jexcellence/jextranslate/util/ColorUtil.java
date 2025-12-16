@@ -137,4 +137,59 @@ public final class ColorUtil {
                 || HEX_COLOR_PATTERN.matcher(text).find()
                 || text.contains("<");
     }
+
+    /**
+     * Converts MiniMessage format to legacy color codes (§).
+     * Used for fallback when Adventure platform is not available.
+     *
+     * @param text the text containing MiniMessage tags
+     * @return the text with legacy color codes
+     */
+    @NotNull
+    public static String convertMiniMessageToLegacy(@NotNull final String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+
+        String result = text;
+
+        // Convert color tags to legacy codes
+        result = result.replace("<black>", "§0");
+        result = result.replace("<dark_blue>", "§1");
+        result = result.replace("<dark_green>", "§2");
+        result = result.replace("<dark_aqua>", "§3");
+        result = result.replace("<dark_red>", "§4");
+        result = result.replace("<dark_purple>", "§5");
+        result = result.replace("<gold>", "§6");
+        result = result.replace("<gray>", "§7");
+        result = result.replace("<grey>", "§7");
+        result = result.replace("<dark_gray>", "§8");
+        result = result.replace("<dark_grey>", "§8");
+        result = result.replace("<blue>", "§9");
+        result = result.replace("<green>", "§a");
+        result = result.replace("<aqua>", "§b");
+        result = result.replace("<red>", "§c");
+        result = result.replace("<light_purple>", "§d");
+        result = result.replace("<yellow>", "§e");
+        result = result.replace("<white>", "§f");
+
+        // Convert formatting tags
+        result = result.replace("<obfuscated>", "§k");
+        result = result.replace("<bold>", "§l");
+        result = result.replace("<strikethrough>", "§m");
+        result = result.replace("<underlined>", "§n");
+        result = result.replace("<italic>", "§o");
+        result = result.replace("<reset>", "§r");
+
+        // Remove closing tags
+        result = result.replaceAll("</[^>]+>", "");
+
+        // Convert hex colors to closest legacy equivalent (simplified)
+        result = result.replaceAll("<#[0-9a-fA-F]{6}>", "§f");
+
+        // Remove any remaining MiniMessage tags
+        result = result.replaceAll("<[^>]+>", "");
+
+        return result;
+    }
 }

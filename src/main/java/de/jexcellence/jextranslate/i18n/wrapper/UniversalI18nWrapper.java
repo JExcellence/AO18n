@@ -57,17 +57,37 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
     @Override
     public void sendMessage() {
         R18nManager manager = R18nManager.getInstance();
-        if (manager != null && manager.getAudiences() != null) {
-            manager.getAudiences().player(this.player).sendMessage(this.getFormattedMessage());
+        if (manager != null) {
+            if (manager.getAudiences() != null) {
+                // Use Adventure API
+                manager.getAudiences().player(this.player).sendMessage(this.getFormattedMessage());
+            } else {
+                // Fallback to legacy method
+                String legacyMessage = ColorUtil.convertMiniMessageToLegacy(
+                    MINI_MESSAGE.serialize(this.getFormattedMessage())
+                );
+                this.player.sendMessage(legacyMessage);
+            }
         }
     }
 
     @Override
     public void sendMessages() {
         R18nManager manager = R18nManager.getInstance();
-        if (manager != null && manager.getAudiences() != null) {
-            this.getMessagesIncludingPlaceholdersAndPrefix().forEach(message ->
-                    manager.getAudiences().player(this.player).sendMessage(message));
+        if (manager != null) {
+            if (manager.getAudiences() != null) {
+                // Use Adventure API
+                this.getMessagesIncludingPlaceholdersAndPrefix().forEach(message ->
+                        manager.getAudiences().player(this.player).sendMessage(message));
+            } else {
+                // Fallback to legacy method
+                this.getMessagesIncludingPlaceholdersAndPrefix().forEach(message -> {
+                    String legacyMessage = ColorUtil.convertMiniMessageToLegacy(
+                        MINI_MESSAGE.serialize(message)
+                    );
+                    this.player.sendMessage(legacyMessage);
+                });
+            }
         }
     }
 
