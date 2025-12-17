@@ -3,8 +3,8 @@ package de.jexcellence.jextranslate.core;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -48,7 +48,7 @@ public final class TranslationExportService {
      */
     public TranslationExportService() {
         this.jsonMapper = new ObjectMapper();
-        this.jsonMapper.serializationConfig().with(SerializationFeature.INDENT_OUTPUT);
+        this.jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
         
         DumperOptions dumperOptions = new DumperOptions();
         dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);

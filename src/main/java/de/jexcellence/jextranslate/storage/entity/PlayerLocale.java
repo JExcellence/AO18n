@@ -1,6 +1,6 @@
 package de.jexcellence.jextranslate.storage.entity;
 
-import de.jexcellence.hibernate.entity.AbstractEntity;
+import de.jexcellence.hibernate.entity.BaseEntity;
 import jakarta.persistence.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +10,7 @@ import java.util.UUID;
 /**
  * JPA entity for storing player locale preferences in a database.
  *
- * <p>This entity extends {@link AbstractEntity} from JEHibernate to inherit
+ * <p>This entity extends {@link BaseEntity} from JEHibernate to inherit
  * standard entity functionality including ID generation and lifecycle management.</p>
  *
  * @author JExcellence
@@ -19,7 +19,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "r18n_player_locale")
-public class PlayerLocale extends AbstractEntity {
+public class PlayerLocale extends BaseEntity {
 
     @Column(name = "unique_id", unique = true, nullable = false)
     private UUID uniqueId;

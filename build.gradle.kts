@@ -1,5 +1,6 @@
 plugins {
     id("raindrop.library-conventions")
+    id("raindrop.dependencies-yml")
 }
 
 group = "de.jexcellence.translate"

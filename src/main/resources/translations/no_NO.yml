@@ -1,0 +1,27 @@
+# Norwegian (Norway) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Velkommen tilbake, {player}!</green> <gray>({online} spillere pålogget)</gray>"
+  first-join: "<yellow>Velkommen til serveren, {player}!</yellow> <gray>Dette er din første gang!</gray>"
+  tutorial: "<gradient:gold:yellow>Velkommen til Serveren!</gradient>"
+
+coins:
+  balance: "Du har <gold>{amount}</gold> mynter"
+  info: "Mynter: {coins}"
+
+lang:
+  current: "Ditt nåværende språk er: <yellow>{locale}</yellow>"
+  available: "Tilgjengelige språk: <gray>{locales}</gray>"
+  changed: "Språk endret til: <green>{locale}</green>"
+  error: "<red>Kunne ikke endre språk. Språklagring støttes ikke.</red>"
+
+reload:
+  starting: "Laster inn oversettelser på nytt..."
+  complete: "<green>Oversettelser lastet inn på nytt!</green> <gray>({locales} språk, {keys} nøkler)</gray>"
+
+error:
+  no-permission: "<red>Du har ikke tillatelse til å bruke denne kommandoen.</red>"
+  player-only: "<red>Denne kommandoen kan bare brukes av spillere.</red>"
+  invalid-usage: "<red>Ugyldig bruk. Bruk: {usage}</red>"

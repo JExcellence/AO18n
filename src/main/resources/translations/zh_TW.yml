@@ -1,0 +1,27 @@
+# Traditional Chinese (Taiwan) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>歡迎回來，{player}！</green> <gray>({online}名玩家在線)</gray>"
+  first-join: "<yellow>歡迎來到伺服器，{player}！</yellow> <gray>這是你第一次加入！</gray>"
+  tutorial: "<gradient:gold:yellow>歡迎來到伺服器！</gradient>"
+
+coins:
+  balance: "你擁有 <gold>{amount}</gold> 金幣"
+  info: "金幣: {coins}"
+
+lang:
+  current: "目前語言: <yellow>{locale}</yellow>"
+  available: "可用語言: <gray>{locales}</gray>"
+  changed: "語言已更改為: <green>{locale}</green>"
+  error: "<red>語言更改失敗。不支援語言儲存。</red>"
+
+reload:
+  starting: "正在重新載入翻譯..."
+  complete: "<green>翻譯已重新載入！</green> <gray>({locales}種語言，{keys}個鍵)</gray>"
+
+error:
+  no-permission: "<red>你沒有權限使用此指令。</red>"
+  player-only: "<red>此指令只能由玩家使用。</red>"
+  invalid-usage: "<red>用法錯誤。用法: {usage}</red>"

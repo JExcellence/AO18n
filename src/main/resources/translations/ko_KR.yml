@@ -1,0 +1,27 @@
+# Korean (Korea) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>다시 오신 것을 환영합니다, {player}님!</green> <gray>({online}명 접속 중)</gray>"
+  first-join: "<yellow>서버에 오신 것을 환영합니다, {player}님!</yellow> <gray>처음 접속하셨네요!</gray>"
+  tutorial: "<gradient:gold:yellow>서버에 오신 것을 환영합니다!</gradient>"
+
+coins:
+  balance: "보유 코인: <gold>{amount}</gold>"
+  info: "코인: {coins}"
+
+lang:
+  current: "현재 언어: <yellow>{locale}</yellow>"
+  available: "사용 가능한 언어: <gray>{locales}</gray>"
+  changed: "언어가 변경되었습니다: <green>{locale}</green>"
+  error: "<red>언어 변경에 실패했습니다. 언어 저장소가 지원되지 않습니다.</red>"
+
+reload:
+  starting: "번역을 다시 불러오는 중..."
+  complete: "<green>번역을 다시 불러왔습니다!</green> <gray>({locales}개 언어, {keys}개 키)</gray>"
+
+error:
+  no-permission: "<red>이 명령어를 사용할 권한이 없습니다.</red>"
+  player-only: "<red>이 명령어는 플레이어만 사용할 수 있습니다.</red>"
+  invalid-usage: "<red>잘못된 사용법입니다. 사용법: {usage}</red>"

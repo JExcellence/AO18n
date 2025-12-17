@@ -1,0 +1,27 @@
+# Japanese (Japan) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>おかえりなさい、{player}さん！</green> <gray>({online}人がオンライン)</gray>"
+  first-join: "<yellow>サーバーへようこそ、{player}さん！</yellow> <gray>初めてのご参加ですね！</gray>"
+  tutorial: "<gradient:gold:yellow>サーバーへようこそ！</gradient>"
+
+coins:
+  balance: "所持コイン: <gold>{amount}</gold>"
+  info: "コイン: {coins}"
+
+lang:
+  current: "現在の言語: <yellow>{locale}</yellow>"
+  available: "利用可能な言語: <gray>{locales}</gray>"
+  changed: "言語を変更しました: <green>{locale}</green>"
+  error: "<red>言語の変更に失敗しました。言語ストレージがサポートされていません。</red>"
+
+reload:
+  starting: "翻訳を再読み込み中..."
+  complete: "<green>翻訳を再読み込みしました！</green> <gray>({locales}言語、{keys}キー)</gray>"
+
+error:
+  no-permission: "<red>このコマンドを使用する権限がありません。</red>"
+  player-only: "<red>このコマンドはプレイヤーのみ使用できます。</red>"
+  invalid-usage: "<red>使用方法が正しくありません。使用法: {usage}</red>"

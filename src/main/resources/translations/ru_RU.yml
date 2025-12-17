@@ -1,0 +1,27 @@
+# Russian (Russia) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>С возвращением, {player}!</green> <gray>({online} игроков онлайн)</gray>"
+  first-join: "<yellow>Добро пожаловать на сервер, {player}!</yellow> <gray>Это ваш первый визит!</gray>"
+  tutorial: "<gradient:gold:yellow>Добро пожаловать на сервер!</gradient>"
+
+coins:
+  balance: "У вас <gold>{amount}</gold> монет"
+  info: "Монеты: {coins}"
+
+lang:
+  current: "Ваш текущий язык: <yellow>{locale}</yellow>"
+  available: "Доступные языки: <gray>{locales}</gray>"
+  changed: "Язык изменён на: <green>{locale}</green>"
+  error: "<red>Не удалось изменить язык. Хранилище языков не поддерживается.</red>"
+
+reload:
+  starting: "Перезагрузка переводов..."
+  complete: "<green>Переводы перезагружены!</green> <gray>({locales} языков, {keys} ключей)</gray>"
+
+error:
+  no-permission: "<red>У вас нет прав для использования этой команды.</red>"
+  player-only: "<red>Эта команда доступна только игрокам.</red>"
+  invalid-usage: "<red>Неверное использование. Используйте: {usage}</red>"

@@ -1,0 +1,27 @@
+# Portuguese (Brazil) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Bem-vindo de volta, {player}!</green> <gray>({online} jogadores online)</gray>"
+  first-join: "<yellow>Bem-vindo ao servidor, {player}!</yellow> <gray>Esta é sua primeira vez!</gray>"
+  tutorial: "<gradient:gold:yellow>Bem-vindo ao Servidor!</gradient>"
+
+coins:
+  balance: "Você tem <gold>{amount}</gold> moedas"
+  info: "Moedas: {coins}"
+
+lang:
+  current: "Seu idioma atual é: <yellow>{locale}</yellow>"
+  available: "Idiomas disponíveis: <gray>{locales}</gray>"
+  changed: "Idioma alterado para: <green>{locale}</green>"
+  error: "<red>Falha ao alterar idioma. Armazenamento de idioma não suportado.</red>"
+
+reload:
+  starting: "Recarregando traduções..."
+  complete: "<green>Traduções recarregadas!</green> <gray>({locales} idiomas, {keys} chaves)</gray>"
+
+error:
+  no-permission: "<red>Você não tem permissão para usar este comando.</red>"
+  player-only: "<red>Este comando só pode ser usado por jogadores.</red>"
+  invalid-usage: "<red>Uso inválido. Use: {usage}</red>"
