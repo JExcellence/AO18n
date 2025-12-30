@@ -1,5 +1,7 @@
 package de.jexcellence.jextranslate;
 
+import de.jexcellence.jextranslate.bedrock.BedrockConverter;
+import de.jexcellence.jextranslate.bedrock.BedrockDetectionCache;
 import de.jexcellence.jextranslate.util.PluralRules;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -8,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,19 +24,19 @@ import java.util.Map;
  *
  * <p><strong>Usage Examples:</strong></p>
  * <pre>{@code
- * // Simple message
+ *
  * r18n.message("welcome.player")
  *     .placeholder("player", player.getName())
  *     .send(player);
  *
- * // Message with multiple placeholders
+ *
  * r18n.message("server.stats")
  *     .placeholder("online", server.getOnlinePlayers().size())
  *     .placeholder("max", server.getMaxPlayers())
  *     .placeholder("tps", getTPS())
  *     .broadcast();
  *
- * // Get component for custom handling
+ *
  * Component component = r18n.message("error.permission")
  *     .placeholder("permission", "admin.reload")
  *     .toComponent(player);
@@ -101,9 +104,9 @@ public final class MessageBuilder {
      *
      * <p><strong>Usage Example:</strong></p>
      * <pre>{@code
-     * // Translation file:
-     * // items.count.one: "You have {count} item"
-     * // items.count.other: "You have {count} items"
+     *
+     *
+     *
      *
      * r18n.message("items.count")
      *     .count("count", itemCount)
@@ -268,12 +271,104 @@ public final class MessageBuilder {
     }
 
     /**
+     * Converts the message to a Bedrock-compatible legacy string.
+     * <p>
+     * This method automatically strips unsupported formatting (click events, hover events)
+     * and converts hex colors according to the configured fallback strategy.
+     *
+     * @param player the target player (null for default locale)
+     * @return the legacy-formatted string suitable for Bedrock clients
+     */
+    @NotNull
+    public String toBedrockString(@Nullable Player player) {
+        Component component = toComponent(player);
+        return BedrockConverter.toLegacyString(
+                component,
+                manager.getConfiguration().hexColorFallback(),
+                manager.getConfiguration().bedrockFormatMode()
+        );
+    }
+
+    /**
+     * Converts the message to multiple Bedrock-compatible legacy strings.
+     * <p>
+     * This method is useful for multi-line messages that need to be displayed
+     * on Bedrock clients.
+     *
+     * @param player the target player (null for default locale)
+     * @return a list of legacy-formatted strings suitable for Bedrock clients
+     */
+    @NotNull
+    public List<String> toBedrockStrings(@Nullable Player player) {
+        List<Component> components = toComponents(player);
+        List<String> result = new ArrayList<>(components.size());
+        for (Component component : components) {
+            result.add(BedrockConverter.toLegacyString(
+                    component,
+                    manager.getConfiguration().hexColorFallback(),
+                    manager.getConfiguration().bedrockFormatMode()
+            ));
+        }
+        return result;
+    }
+
+    /**
+     * Converts the message to a plain text string with all formatting stripped.
+     * <p>
+     * This method is useful for Bedrock forms and other contexts where
+     * only plain text is supported (no colors, no formatting).
+     *
+     * @param player the target player (null for default locale)
+     * @return the plain text string with all formatting removed
+     */
+    @NotNull
+    public String toPlainString(@Nullable Player player) {
+        Component component = toComponent(player);
+        return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(component);
+    }
+
+    /**
+     * Converts the message to multiple plain text strings.
+     * <p>
+     * This method is useful for multi-line messages in Bedrock forms.
+     *
+     * @param player the target player (null for default locale)
+     * @return a list of plain text strings with all formatting removed
+     */
+    @NotNull
+    public List<String> toPlainStrings(@Nullable Player player) {
+        List<Component> components = toComponents(player);
+        List<String> result = new ArrayList<>(components.size());
+        var serializer = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
+        for (Component component : components) {
+            result.add(serializer.serialize(component));
+        }
+        return result;
+    }
+
+    /**
+     * Checks if the target player is a Bedrock Edition player.
+     * <p>
+     * This method uses the BedrockDetectionCache to efficiently determine
+     * if a player is connecting via Bedrock Edition through Geyser/Floodgate.
+     *
+     * @param player the player to check
+     * @return true if the player is a Bedrock player, false otherwise or if detection is unavailable
+     */
+    public boolean isBedrockPlayer(@Nullable Player player) {
+        if (player == null) {
+            return false;
+        }
+        BedrockDetectionCache cache = manager.getBedrockDetectionCache();
+        return cache != null && cache.isBedrockPlayer(player);
+    }
+
+    /**
      * Determines the appropriate locale for the message.
      *
      * <p>The locale is determined in the following order:</p>
      * <ol>
      *   <li>Explicitly set locale via {@link #locale(String)}</li>
-     *   <li>Stored locale from {@link de.jexcellence.jextranslate.storage.LocaleStorage}</li>
      *   <li>Player's client locale from {@link Player#getLocale()}</li>
      *   <li>Default locale from configuration</li>
      * </ol>
@@ -283,41 +378,52 @@ public final class MessageBuilder {
      */
     @NotNull
     private String determineLocale(@Nullable Player player) {
-        // Use explicitly set locale first
         if (targetLocale != null) {
             return targetLocale;
         }
 
-        // Check LocaleStorage for stored player preference
-        if (player != null) {
-            var storedLocale = manager.getLocaleStorage().getLocale(player.getUniqueId());
-            if (storedLocale.isPresent()) {
-                String locale = storedLocale.get();
-                if (manager.getConfiguration().supportedLocales().contains(locale)) {
-                    return locale;
-                }
-            }
-        }
-
-        // Fall back to player's client locale
         if (player != null) {
             try {
                 String playerLocale = player.getLocale();
-                if (manager.getConfiguration().supportedLocales().contains(playerLocale)) {
-                    return playerLocale;
+                String normalizedLocale = normalizeLocale(playerLocale);
+                
+                if (manager.getConfiguration().supportedLocales().contains(normalizedLocale)) {
+                    return normalizedLocale;
                 }
-                // Try language part only (e.g., "en" from "en_GB")
-                String language = playerLocale.split("[_-]")[0];
+                String language = playerLocale.split("[_-]")[0].toLowerCase();
                 if (manager.getConfiguration().supportedLocales().contains(language)) {
                     return language;
                 }
+                for (String supportedLocale : manager.getConfiguration().supportedLocales()) {
+                    if (supportedLocale.toLowerCase().startsWith(language)) {
+                        return supportedLocale;
+                    }
+                }
             } catch (Exception e) {
-                // Fallback for older versions or errors
             }
         }
 
-        // Use default locale
         return manager.getConfiguration().defaultLocale();
+    }
+
+    /**
+     * Normalizes a locale string to the standard format (e.g., "de_de" -> "de_DE").
+     *
+     * @param locale the locale to normalize
+     * @return the normalized locale
+     */
+    @NotNull
+    private String normalizeLocale(@NotNull String locale) {
+        if (locale == null || locale.isEmpty()) {
+            return locale;
+        }
+        String[] parts = locale.split("[_-]");
+        if (parts.length == 1) {
+            return parts[0].toLowerCase();
+        } else if (parts.length >= 2) {
+            return parts[0].toLowerCase() + "_" + parts[1].toUpperCase();
+        }
+        return locale;
     }
 
     /**
@@ -338,31 +444,25 @@ public final class MessageBuilder {
      */
     @NotNull
     private String resolvePluralKey(@NotNull String baseKey, @NotNull String locale) {
-        // If no count placeholders, return base key
         if (countPlaceholders.isEmpty()) {
             return baseKey;
         }
 
-        // Get the first count placeholder for plural selection
         var entry = countPlaceholders.entrySet().iterator().next();
         int count = entry.getValue();
 
-        // Determine the plural form based on locale and count
         String pluralForm = PluralRules.select(locale, count);
         String pluralKey = baseKey + "." + pluralForm;
 
-        // Check if the specific plural form exists
         if (manager.getTranslationLoader().hasKey(pluralKey, locale)) {
             return pluralKey;
         }
 
-        // Fall back to .other
         String otherKey = baseKey + "." + PluralRules.OTHER;
         if (manager.getTranslationLoader().hasKey(otherKey, locale)) {
             return otherKey;
         }
 
-        // Fall back to base key
         return baseKey;
     }
 

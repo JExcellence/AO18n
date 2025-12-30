@@ -53,7 +53,7 @@ public final class KeyValidator {
     @NotNull
     public ValidationReport validateAllKeys() {
         long startTime = System.currentTimeMillis();
-        LOGGER.info("Starting comprehensive key validation...");
+        LOGGER.log(Level.INFO, "Starting comprehensive key validation...");
 
         ValidationReport.Builder reportBuilder = ValidationReport.builder()
                 .timestamp(Instant.now());
@@ -61,7 +61,7 @@ public final class KeyValidator {
         Map<String, Map<String, List<String>>> translations = getTranslations();
         
         if (translations.isEmpty()) {
-            LOGGER.warning("No translations loaded - skipping validation");
+            LOGGER.log(Level.WARNING, "No translations loaded - skipping validation");
             return reportBuilder
                     .statistics(ValidationStatistics.empty())
                     .build();

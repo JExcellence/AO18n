@@ -2,6 +2,8 @@
 
 package de.jexcellence.jextranslate.config;
 
+import de.jexcellence.jextranslate.bedrock.BedrockFormatMode;
+import de.jexcellence.jextranslate.bedrock.HexColorFallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,6 +34,9 @@ import java.util.Set;
  *   <li><strong>watchFiles</strong> - Whether to watch translation files for changes</li>
  *   <li><strong>metricsEnabled</strong> - Whether to collect translation usage metrics</li>
  *   <li><strong>missingKeyHandler</strong> - Custom handler for missing translation keys</li>
+ *   <li><strong>bedrockSupportEnabled</strong> - Whether Bedrock Edition player support is enabled (default: true)</li>
+ *   <li><strong>hexColorFallback</strong> - How hex colors are handled for Bedrock players (default: NEAREST_LEGACY)</li>
+ *   <li><strong>bedrockFormatMode</strong> - Formatting mode for Bedrock players (default: CONSERVATIVE)</li>
  * </ul>
  *
  * @param defaultLocale         the default locale code (e.g., "en_GB")
@@ -47,6 +52,9 @@ import java.util.Set;
  * @param watchFiles            whether file watching is enabled
  * @param metricsEnabled        whether metrics collection is enabled
  * @param missingKeyHandler     handler for missing translation keys
+ * @param bedrockSupportEnabled whether Bedrock Edition player support is enabled
+ * @param hexColorFallback      how hex colors are handled for Bedrock players
+ * @param bedrockFormatMode     formatting mode for Bedrock players
  * @author JExcellence
  * @version 2.0.0
  * @since 2.0.0
@@ -64,7 +72,10 @@ public record R18nConfiguration(
         int cacheExpireMinutes,
         boolean watchFiles,
         boolean metricsEnabled,
-        @NotNull MissingKeyHandler missingKeyHandler
+        @NotNull MissingKeyHandler missingKeyHandler,
+        boolean bedrockSupportEnabled,
+        @NotNull HexColorFallback hexColorFallback,
+        @NotNull BedrockFormatMode bedrockFormatMode
 ) {
 
     /**
@@ -126,6 +137,12 @@ public record R18nConfiguration(
         if (missingKeyHandler == null) {
             throw new IllegalArgumentException("Missing key handler cannot be null");
         }
+        if (hexColorFallback == null) {
+            throw new IllegalArgumentException("Hex color fallback cannot be null");
+        }
+        if (bedrockFormatMode == null) {
+            throw new IllegalArgumentException("Bedrock format mode cannot be null");
+        }
         // Make defensive copies
         supportedLocales = Collections.unmodifiableSet(new HashSet<>(supportedLocales));
         defaultLocale = defaultLocale.trim();
@@ -152,7 +169,10 @@ public record R18nConfiguration(
                 30,
                 false,
                 false,
-                DEFAULT_MISSING_KEY_HANDLER
+                DEFAULT_MISSING_KEY_HANDLER,
+                true,
+                HexColorFallback.NEAREST_LEGACY,
+                BedrockFormatMode.CONSERVATIVE
         );
     }
 
@@ -179,7 +199,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -204,7 +227,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -242,7 +268,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -267,7 +296,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -292,7 +324,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -317,7 +352,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -342,7 +380,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -367,7 +408,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -392,7 +436,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -417,7 +464,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -442,7 +492,10 @@ public record R18nConfiguration(
                 minutes,
                 watchFiles,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -467,7 +520,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 enabled,
                 metricsEnabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -492,7 +548,10 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 enabled,
-                missingKeyHandler
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
         );
     }
 
@@ -517,7 +576,94 @@ public record R18nConfiguration(
                 cacheExpireMinutes,
                 watchFiles,
                 metricsEnabled,
-                handler
+                handler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                bedrockFormatMode
+        );
+    }
+
+    /**
+     * Creates a new configuration with Bedrock support enabled/disabled.
+     *
+     * @param enabled whether Bedrock support is enabled
+     * @return a new configuration instance
+     */
+    @NotNull
+    public R18nConfiguration withBedrockSupportEnabled(boolean enabled) {
+        return new R18nConfiguration(
+                defaultLocale,
+                supportedLocales,
+                translationDirectory,
+                keyValidationEnabled,
+                placeholderAPIEnabled,
+                legacyColorSupport,
+                debugMode,
+                cacheEnabled,
+                cacheMaxSize,
+                cacheExpireMinutes,
+                watchFiles,
+                metricsEnabled,
+                missingKeyHandler,
+                enabled,
+                hexColorFallback,
+                bedrockFormatMode
+        );
+    }
+
+    /**
+     * Creates a new configuration with the specified hex color fallback strategy.
+     *
+     * @param fallback the hex color fallback strategy for Bedrock players
+     * @return a new configuration instance
+     */
+    @NotNull
+    public R18nConfiguration withHexColorFallback(@NotNull HexColorFallback fallback) {
+        return new R18nConfiguration(
+                defaultLocale,
+                supportedLocales,
+                translationDirectory,
+                keyValidationEnabled,
+                placeholderAPIEnabled,
+                legacyColorSupport,
+                debugMode,
+                cacheEnabled,
+                cacheMaxSize,
+                cacheExpireMinutes,
+                watchFiles,
+                metricsEnabled,
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                fallback,
+                bedrockFormatMode
+        );
+    }
+
+    /**
+     * Creates a new configuration with the specified Bedrock format mode.
+     *
+     * @param mode the Bedrock format mode
+     * @return a new configuration instance
+     */
+    @NotNull
+    public R18nConfiguration withBedrockFormatMode(@NotNull BedrockFormatMode mode) {
+        return new R18nConfiguration(
+                defaultLocale,
+                supportedLocales,
+                translationDirectory,
+                keyValidationEnabled,
+                placeholderAPIEnabled,
+                legacyColorSupport,
+                debugMode,
+                cacheEnabled,
+                cacheMaxSize,
+                cacheExpireMinutes,
+                watchFiles,
+                metricsEnabled,
+                missingKeyHandler,
+                bedrockSupportEnabled,
+                hexColorFallback,
+                mode
         );
     }
 
@@ -599,7 +745,10 @@ public record R18nConfiguration(
                 .cacheExpireMinutes(cacheExpireMinutes)
                 .enableFileWatcher(watchFiles)
                 .enableMetrics(metricsEnabled)
-                .onMissingKey(missingKeyHandler);
+                .onMissingKey(missingKeyHandler)
+                .bedrockSupportEnabled(bedrockSupportEnabled)
+                .hexColorFallback(hexColorFallback)
+                .bedrockFormatMode(bedrockFormatMode);
     }
 
     /**
@@ -619,6 +768,9 @@ public record R18nConfiguration(
         private boolean watchFiles = false;
         private boolean metricsEnabled = false;
         private MissingKeyHandler missingKeyHandler = DEFAULT_MISSING_KEY_HANDLER;
+        private boolean bedrockSupportEnabled = true;
+        private HexColorFallback hexColorFallback = HexColorFallback.NEAREST_LEGACY;
+        private BedrockFormatMode bedrockFormatMode = BedrockFormatMode.CONSERVATIVE;
 
         /**
          * Sets the default locale.
@@ -790,6 +942,42 @@ public record R18nConfiguration(
         }
 
         /**
+         * Enables or disables Bedrock Edition player support.
+         *
+         * @param enabled whether Bedrock support is enabled
+         * @return this builder
+         */
+        @NotNull
+        public Builder bedrockSupportEnabled(boolean enabled) {
+            this.bedrockSupportEnabled = enabled;
+            return this;
+        }
+
+        /**
+         * Sets the hex color fallback strategy for Bedrock players.
+         *
+         * @param fallback the hex color fallback strategy
+         * @return this builder
+         */
+        @NotNull
+        public Builder hexColorFallback(@NotNull HexColorFallback fallback) {
+            this.hexColorFallback = fallback;
+            return this;
+        }
+
+        /**
+         * Sets the Bedrock format mode.
+         *
+         * @param mode the Bedrock format mode
+         * @return this builder
+         */
+        @NotNull
+        public Builder bedrockFormatMode(@NotNull BedrockFormatMode mode) {
+            this.bedrockFormatMode = mode;
+            return this;
+        }
+
+        /**
          * Builds the configuration.
          *
          * @return a new R18nConfiguration instance
@@ -809,7 +997,10 @@ public record R18nConfiguration(
                     cacheExpireMinutes,
                     watchFiles,
                     metricsEnabled,
-                    missingKeyHandler
+                    missingKeyHandler,
+                    bedrockSupportEnabled,
+                    hexColorFallback,
+                    bedrockFormatMode
             );
         }
     }

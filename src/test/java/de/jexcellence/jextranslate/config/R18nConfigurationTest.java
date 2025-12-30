@@ -1,5 +1,7 @@
 package de.jexcellence.jextranslate.config;
 
+import de.jexcellence.jextranslate.bedrock.BedrockFormatMode;
+import de.jexcellence.jextranslate.bedrock.HexColorFallback;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -159,7 +161,8 @@ class R18nConfigurationTest {
             assertThrows(IllegalArgumentException.class, () ->
                     new R18nConfiguration(null, Set.of("en_US"), "translations",
                             true, false, true, false, true, 1000, 30, false, false,
-                            R18nConfiguration.DEFAULT_MISSING_KEY_HANDLER));
+                            R18nConfiguration.DEFAULT_MISSING_KEY_HANDLER,
+                            true, HexColorFallback.NEAREST_LEGACY, BedrockFormatMode.CONSERVATIVE));
         }
 
         @Test
@@ -168,7 +171,8 @@ class R18nConfigurationTest {
             assertThrows(IllegalArgumentException.class, () ->
                     new R18nConfiguration("", Set.of("en_US"), "translations",
                             true, false, true, false, true, 1000, 30, false, false,
-                            R18nConfiguration.DEFAULT_MISSING_KEY_HANDLER));
+                            R18nConfiguration.DEFAULT_MISSING_KEY_HANDLER,
+                            true, HexColorFallback.NEAREST_LEGACY, BedrockFormatMode.CONSERVATIVE));
         }
 
         @Test
@@ -177,7 +181,8 @@ class R18nConfigurationTest {
             assertThrows(IllegalArgumentException.class, () ->
                     new R18nConfiguration("de_DE", Set.of("en_US"), "translations",
                             true, false, true, false, true, 1000, 30, false, false,
-                            R18nConfiguration.DEFAULT_MISSING_KEY_HANDLER));
+                            R18nConfiguration.DEFAULT_MISSING_KEY_HANDLER,
+                            true, HexColorFallback.NEAREST_LEGACY, BedrockFormatMode.CONSERVATIVE));
         }
     }
 }

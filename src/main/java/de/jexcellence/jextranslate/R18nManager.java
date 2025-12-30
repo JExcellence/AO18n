@@ -1,5 +1,6 @@
 package de.jexcellence.jextranslate;
 
+import de.jexcellence.jextranslate.bedrock.BedrockDetectionCache;
 import de.jexcellence.jextranslate.command.PR18nCommand;
 import de.jexcellence.jextranslate.config.R18nConfiguration;
 import de.jexcellence.jextranslate.core.MessageProvider;
@@ -7,11 +8,7 @@ import de.jexcellence.jextranslate.core.TranslationFileWatcher;
 import de.jexcellence.jextranslate.core.TranslationLoader;
 import de.jexcellence.jextranslate.core.VersionDetector;
 import de.jexcellence.jextranslate.core.VersionedMessageSender;
-import de.jexcellence.jextranslate.storage.DatabaseLocaleStorage;
-import de.jexcellence.jextranslate.storage.InMemoryLocaleStorage;
-import de.jexcellence.jextranslate.storage.LocaleStorage;
 import de.jexcellence.jextranslate.validation.KeyValidator;
-import jakarta.persistence.EntityManagerFactory;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -76,13 +73,13 @@ public final class R18nManager {
     private final MessageProvider messageProvider;
     private final KeyValidator keyValidator;
     private final VersionDetector versionDetector;
-    private final LocaleStorage localeStorage;
     private final Logger logger;
 
     private BukkitAudiences audiences;
     private VersionedMessageSender messageSender;
     private TranslationFileWatcher fileWatcher;
     private Thread fileWatcherThread;
+    private BedrockDetectionCache bedrockDetectionCache;
     private boolean initialized = false;
 
     /**
@@ -109,7 +106,6 @@ public final class R18nManager {
         this.translationLoader = new TranslationLoader(plugin, configuration);
         this.keyValidator = new KeyValidator(configuration);
         this.messageProvider = new MessageProvider(configuration, versionDetector);
-        this.localeStorage = builder.localeStorage != null ? builder.localeStorage : new InMemoryLocaleStorage();
     }
 
     /**
@@ -139,6 +135,15 @@ public final class R18nManager {
 
                 // Initialize versioned message sender
                 messageSender = new VersionedMessageSender(versionDetector, audiences);
+
+                // Initialize Bedrock detection cache if enabled
+                if (configuration.bedrockSupportEnabled()) {
+                    bedrockDetectionCache = new BedrockDetectionCache();
+                    bedrockDetectionCache.registerListener(plugin);
+                    messageSender.setBedrockDetectionCache(bedrockDetectionCache);
+                    messageSender.setConfiguration(configuration);
+                    logger.info("Bedrock detection cache initialized");
+                }
 
                 // Load translations
                 translationLoader.loadTranslations().join();
@@ -220,6 +225,12 @@ public final class R18nManager {
     public void shutdown() {
         // Stop file watcher if running
         stopFileWatcher();
+        
+        // Shutdown Bedrock detection cache
+        if (bedrockDetectionCache != null) {
+            bedrockDetectionCache.shutdown();
+            bedrockDetectionCache = null;
+        }
         
         if (audiences != null) {
             audiences.close();
@@ -341,13 +352,13 @@ public final class R18nManager {
     }
 
     /**
-     * Gets the locale storage.
+     * Gets the Bedrock detection cache.
      *
-     * @return the locale storage
+     * @return the Bedrock detection cache, or null if Bedrock support is disabled
      */
-    @NotNull
-    public LocaleStorage getLocaleStorage() {
-        return localeStorage;
+    @Nullable
+    public BedrockDetectionCache getBedrockDetectionCache() {
+        return bedrockDetectionCache;
     }
 
     /**
@@ -503,27 +514,10 @@ public final class R18nManager {
     public static final class Builder {
         private final JavaPlugin plugin;
         private R18nConfiguration configuration;
-        private LocaleStorage localeStorage;
-        private EntityManagerFactory entityManagerFactory;
 
         private Builder(@NotNull JavaPlugin plugin) {
             this.plugin = plugin;
             this.configuration = R18nConfiguration.defaultConfiguration();
-        }
-
-        /**
-         * Sets the EntityManagerFactory for database operations.
-         *
-         * <p>This EMF can be used by {@link #withDatabaseStorage()} to create
-         * a database-backed locale storage without passing the EMF again.</p>
-         *
-         * @param entityManagerFactory the JPA entity manager factory
-         * @return this builder
-         */
-        @NotNull
-        public Builder entityManagerFactory(@NotNull EntityManagerFactory entityManagerFactory) {
-            this.entityManagerFactory = entityManagerFactory;
-            return this;
         }
 
         /**
@@ -608,54 +602,6 @@ public final class R18nManager {
         @NotNull
         public Builder configuration(@NotNull R18nConfiguration configuration) {
             this.configuration = configuration;
-            return this;
-        }
-
-        /**
-         * Sets a custom locale storage implementation.
-         *
-         * @param localeStorage the locale storage implementation
-         * @return this builder
-         */
-        @NotNull
-        public Builder localeStorage(@NotNull LocaleStorage localeStorage) {
-            this.localeStorage = localeStorage;
-            return this;
-        }
-
-        /**
-         * Configures database-backed locale storage using JPA.
-         *
-         * <p>This method creates a {@link DatabaseLocaleStorage} using the provided
-         * EntityManagerFactory. The storage will persist player locale preferences
-         * to the database.</p>
-         *
-         * @param entityManagerFactory the JPA entity manager factory
-         * @return this builder
-         */
-        @NotNull
-        public Builder withDatabaseStorage(@NotNull EntityManagerFactory entityManagerFactory) {
-            this.localeStorage = new DatabaseLocaleStorage(entityManagerFactory);
-            return this;
-        }
-
-        /**
-         * Configures database-backed locale storage using the previously set EntityManagerFactory.
-         *
-         * <p>This method creates a {@link DatabaseLocaleStorage} using the EMF set via
-         * {@link #entityManagerFactory(EntityManagerFactory)}. Call that method first
-         * before calling this one.</p>
-         *
-         * @return this builder
-         * @throws IllegalStateException if no EntityManagerFactory has been set
-         */
-        @NotNull
-        public Builder withDatabaseStorage() {
-            if (this.entityManagerFactory == null) {
-                throw new IllegalStateException(
-                    "EntityManagerFactory must be set via entityManagerFactory() before calling withDatabaseStorage()");
-            }
-            this.localeStorage = new DatabaseLocaleStorage(this.entityManagerFactory);
             return this;
         }
 

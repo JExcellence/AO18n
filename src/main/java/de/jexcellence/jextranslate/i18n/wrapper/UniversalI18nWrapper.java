@@ -219,6 +219,8 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
 
     /**
      * Gets the player's locale with fallback support for older versions.
+     * First checks the LocaleStorage for a custom locale preference,
+     * then falls back to the Minecraft client locale.
      *
      * @return The player's locale string, or default locale if unavailable.
      */
@@ -228,11 +230,50 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
         String defaultLocale = manager != null 
                 ? manager.getConfiguration().defaultLocale() 
                 : "en_US";
+        
+        // Fall back to Minecraft client locale
         try {
-            return this.player.getLocale();
+            String playerLocale = this.player.getLocale();
+            // Normalize locale format (e.g., "de_de" -> "de_DE")
+            String normalizedLocale = normalizeLocale(playerLocale);
+            
+            if (manager != null) {
+                // Check if normalized locale is supported
+                if (manager.getConfiguration().supportedLocales().contains(normalizedLocale)) {
+                    return normalizedLocale;
+                }
+                // Try to find a matching locale by language prefix
+                String language = playerLocale.split("[_-]")[0].toLowerCase();
+                for (String supportedLocale : manager.getConfiguration().supportedLocales()) {
+                    if (supportedLocale.toLowerCase().startsWith(language)) {
+                        return supportedLocale;
+                    }
+                }
+            }
+            return normalizedLocale;
         } catch (NoSuchMethodError | UnsupportedOperationException e) {
             return defaultLocale;
         }
+    }
+
+    /**
+     * Normalizes a locale string to the standard format (e.g., "de_de" -> "de_DE").
+     *
+     * @param locale the locale to normalize
+     * @return the normalized locale
+     */
+    @NotNull
+    private String normalizeLocale(@NotNull String locale) {
+        if (locale == null || locale.isEmpty()) {
+            return locale;
+        }
+        String[] parts = locale.split("[_-]");
+        if (parts.length == 1) {
+            return parts[0].toLowerCase();
+        } else if (parts.length >= 2) {
+            return parts[0].toLowerCase() + "_" + parts[1].toUpperCase();
+        }
+        return locale;
     }
 
     /**

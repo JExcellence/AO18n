@@ -235,6 +235,7 @@ public final class TranslationLoader {
     /**
      * Extracts translation files using Bukkit's saveResource method.
      * This is the most reliable method as it uses Bukkit's built-in resource handling.
+     * Only extracts files for locales in supportedLocales (if configured).
      */
     private void extractUsingBukkitSaveResource(@NotNull File translationDir, @NotNull String translationPath) {
         // Common locale files to extract
@@ -245,8 +246,21 @@ public final class TranslationLoader {
             "en", "de"
         };
         
+        Set<String> supportedLocales = configuration.supportedLocales();
+        boolean filterEnabled = !supportedLocales.isEmpty();
+        
         int extractedCount = 0;
+        int skippedCount = 0;
         for (String locale : commonLocales) {
+            // Skip if filtering is enabled and locale not in supported list
+            if (filterEnabled && !supportedLocales.contains(locale)) {
+                if (configuration.debugMode()) {
+                    LOGGER.fine("Skipping extraction of unsupported locale: " + locale);
+                }
+                skippedCount++;
+                continue;
+            }
+            
             String resourcePath = translationPath + "/" + locale + ".yml";
             File targetFile = new File(translationDir, locale + ".yml");
             
@@ -270,11 +284,15 @@ public final class TranslationLoader {
         if (extractedCount > 0) {
             LOGGER.info("Extracted " + extractedCount + " translation files via Bukkit saveResource");
         }
+        if (skippedCount > 0 && configuration.debugMode()) {
+            LOGGER.info("Skipped " + skippedCount + " unsupported locales during extraction");
+        }
     }
     
     /**
      * Extracts translation files by scanning the JAR file directly.
      * This is a fallback method that catches any files not covered by the Bukkit method.
+     * Only extracts files for locales in supportedLocales (if configured).
      */
     private void extractUsingJarScanning(@NotNull File translationDir, @NotNull String translationPath) {
         try {
@@ -287,9 +305,13 @@ public final class TranslationLoader {
             
             LOGGER.info("Scanning JAR for additional translation files: " + jarFile.getName());
             
+            Set<String> supportedLocales = configuration.supportedLocales();
+            boolean filterEnabled = !supportedLocales.isEmpty();
+            
             try (var jar = new java.util.jar.JarFile(jarFile)) {
                 var entries = jar.entries();
                 int extractedCount = 0;
+                int skippedCount = 0;
                 
                 while (entries.hasMoreElements()) {
                     var entry = entries.nextElement();
@@ -301,6 +323,17 @@ public final class TranslationLoader {
                             !entry.isDirectory()) {
                         
                         String fileName = entryName.substring(entryName.lastIndexOf('/') + 1);
+                        String locale = extractLocaleFromFilename(fileName);
+                        
+                        // Skip if filtering is enabled and locale not in supported list
+                        if (filterEnabled && !supportedLocales.contains(locale)) {
+                            if (configuration.debugMode()) {
+                                LOGGER.fine("Skipping JAR extraction of unsupported locale: " + locale);
+                            }
+                            skippedCount++;
+                            continue;
+                        }
+                        
                         File targetFile = new File(translationDir, fileName);
                         
                         if (!targetFile.exists()) {
@@ -317,6 +350,9 @@ public final class TranslationLoader {
                 
                 if (extractedCount > 0) {
                     LOGGER.info("Extracted " + extractedCount + " additional translation files from JAR");
+                }
+                if (skippedCount > 0 && configuration.debugMode()) {
+                    LOGGER.info("Skipped " + skippedCount + " unsupported locales during JAR extraction");
                 }
             }
         } catch (Exception e) {
@@ -379,6 +415,18 @@ public final class TranslationLoader {
     private boolean isTranslationFile(@NotNull String fileName) {
         String lowerName = fileName.toLowerCase();
         return lowerName.endsWith(".yml") || lowerName.endsWith(".yaml") || lowerName.endsWith(".json");
+    }
+    
+    /**
+     * Extracts the locale code from a translation filename.
+     * 
+     * @param fileName the filename (e.g., "en_US.yml", "de_DE.json")
+     * @return the locale code (e.g., "en_US", "de_DE")
+     */
+    @NotNull
+    private String extractLocaleFromFilename(@NotNull String fileName) {
+        int lastDot = fileName.lastIndexOf('.');
+        return lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
     }
 
     private void loadTranslationFiles(@NotNull File translationDir) {

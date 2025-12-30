@@ -1,5 +1,10 @@
 package de.jexcellence.jextranslate.core;
 
+import de.jexcellence.jextranslate.bedrock.BedrockConverter;
+import de.jexcellence.jextranslate.bedrock.BedrockDetectionCache;
+import de.jexcellence.jextranslate.bedrock.BedrockFormatMode;
+import de.jexcellence.jextranslate.bedrock.HexColorFallback;
+import de.jexcellence.jextranslate.config.R18nConfiguration;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
@@ -32,6 +37,8 @@ public final class VersionedMessageSender {
 
     private final VersionDetector versionDetector;
     private final BukkitAudiences audiences;
+    private BedrockDetectionCache bedrockDetectionCache;
+    private R18nConfiguration configuration;
 
     /**
      * Creates a new versioned message sender.
@@ -45,12 +52,39 @@ public final class VersionedMessageSender {
     }
 
     /**
+     * Sets the Bedrock detection cache for automatic Bedrock player handling.
+     *
+     * @param cache the Bedrock detection cache
+     */
+    public void setBedrockDetectionCache(@Nullable BedrockDetectionCache cache) {
+        this.bedrockDetectionCache = cache;
+    }
+
+    /**
+     * Sets the R18n configuration for Bedrock format settings.
+     *
+     * @param configuration the R18n configuration
+     */
+    public void setConfiguration(@Nullable R18nConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
+    /**
      * Sends a component message to a player using the appropriate method for the server version.
+     * <p>
+     * If the player is detected as a Bedrock player and Bedrock support is enabled,
+     * the message will be automatically converted to legacy format.
      *
      * @param player    the target player
      * @param component the component to send
      */
     public void sendMessage(@NotNull Player player, @NotNull Component component) {
+        // Check if player is Bedrock and Bedrock support is enabled
+        if (isBedrockSupportEnabled() && isBedrockPlayer(player)) {
+            sendBedrockMessage(player, component);
+            return;
+        }
+
         if (supportsComponents()) {
             if (audiences != null) {
                 audiences.player(player).sendMessage(component);
@@ -201,5 +235,49 @@ public final class VersionedMessageSender {
      */
     public boolean isLegacy() {
         return versionDetector.isLegacy();
+    }
+
+    /**
+     * Sends a Bedrock-compatible message to a player.
+     * <p>
+     * Geyser handles Adventure components properly - it only lacks support for
+     * click events, hover events, and custom fonts. We strip those unsupported
+     * features but keep the component format with colors intact.
+     *
+     * @param player    the target player
+     * @param component the component to convert and send
+     */
+    private void sendBedrockMessage(@NotNull Player player, @NotNull Component component) {
+        // Strip only unsupported features (click/hover events, custom fonts)
+        // but keep colors and formatting - Geyser handles those fine
+        Component strippedComponent = BedrockConverter.stripUnsupportedFormatting(component);
+        
+        // Send as component through Adventure - Geyser translates it properly
+        if (audiences != null) {
+            audiences.player(player).sendMessage(strippedComponent);
+        } else {
+            // Fallback to legacy only if Adventure is not available
+            String legacyMessage = LEGACY_SERIALIZER.serialize(strippedComponent);
+            player.sendMessage(legacyMessage);
+        }
+    }
+
+    /**
+     * Checks if Bedrock support is enabled.
+     *
+     * @return true if Bedrock support is enabled
+     */
+    private boolean isBedrockSupportEnabled() {
+        return configuration == null || configuration.bedrockSupportEnabled();
+    }
+
+    /**
+     * Checks if a player is a Bedrock player.
+     *
+     * @param player the player to check
+     * @return true if the player is a Bedrock player
+     */
+    private boolean isBedrockPlayer(@NotNull Player player) {
+        return bedrockDetectionCache != null && bedrockDetectionCache.isBedrockPlayer(player);
     }
 }

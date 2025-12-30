@@ -301,12 +301,6 @@ R18nManager r18n = R18nManager.builder(plugin)
     .defaultLocale("en_US")
     .withDatabaseStorage(entityManagerFactory)
     .build();
-
-// Or set EMF first, then enable database storage
-R18nManager r18n = R18nManager.builder(plugin)
-    .entityManagerFactory(emf)
-    .withDatabaseStorage()
-    .build();
 ```
 
 ### Custom Storage Implementation
