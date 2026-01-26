@@ -123,7 +123,7 @@ class R18nConfigurationTest {
             R18nConfiguration config = new R18nConfiguration.Builder()
                     .defaultLocale("de_DE")
                     .supportedLocales("de_DE", "en_US", "fr_FR")
-                    .translationDirectory("lang")
+                    .translationDirectory("translations")
                     .keyValidationEnabled(false)
                     .placeholderAPIEnabled(true)
                     .legacyColorSupport(false)
@@ -132,7 +132,7 @@ class R18nConfigurationTest {
 
             assertEquals("de_DE", config.defaultLocale());
             assertEquals(3, config.supportedLocales().size());
-            assertEquals("lang", config.translationDirectory());
+            assertEquals("translations", config.translationDirectory());
             assertFalse(config.keyValidationEnabled());
             assertTrue(config.placeholderAPIEnabled());
             assertFalse(config.legacyColorSupport());

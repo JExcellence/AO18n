@@ -80,7 +80,6 @@ public class I18n {
      * @param <T> the type of the message (e.g., String, Component)
      * @return the formatted message
      */
-    @SuppressWarnings("unchecked")
     public <T> T component() {
         return (T) this.i18nVersionWrapper.displayMessage();
     }
@@ -91,7 +90,6 @@ public class I18n {
      * @param <T> the type of the messages (e.g., String, Component)
      * @return the list of formatted messages
      */
-    @SuppressWarnings("unchecked")
     public <T> List<T> children() {
         return (List<T>) this.i18nVersionWrapper.displayMessages();
     }
@@ -138,12 +136,6 @@ public class I18n {
          * @throws NullPointerException if key or player is null
          */
         public Builder(@NotNull String key, @NotNull Player player) {
-            if (key == null) {
-                throw new NullPointerException("Translation key cannot be null");
-            }
-            if (player == null) {
-                throw new NullPointerException("Player cannot be null");
-            }
             this.key = key;
             this.player = player;
         }
@@ -155,9 +147,6 @@ public class I18n {
          * @throws NullPointerException if key is null
          */
         public Builder(@NotNull String key) {
-            if (key == null) {
-                throw new NullPointerException("Translation key cannot be null");
-            }
             this.key = key;
             this.player = null;
         }
