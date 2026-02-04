@@ -61,7 +61,9 @@ public final class KeyValidator {
         Map<String, Map<String, List<String>>> translations = getTranslations();
         
         if (translations.isEmpty()) {
-            LOGGER.log(Level.WARNING, "No translations loaded - skipping validation");
+            if (configuration.debugMode()) {
+                LOGGER.log(Level.FINE, "No translations loaded - skipping validation");
+            }
             return reportBuilder
                     .statistics(ValidationStatistics.empty())
                     .build();

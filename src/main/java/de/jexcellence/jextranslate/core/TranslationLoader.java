@@ -211,6 +211,57 @@ public final class TranslationLoader {
         return copy;
     }
 
+    /**
+     * Manually cleans up translation files for unsupported locales.
+     * This can be called by users who want to remove files for locales not in their supportedLocales configuration.
+     * 
+     * @return the number of files that were deleted
+     */
+    public int cleanupUnsupportedFiles() {
+        Set<String> supportedLocales = configuration.supportedLocales();
+        if (supportedLocales.isEmpty()) {
+            LOGGER.info("No supported locales configured - no cleanup needed");
+            return 0;
+        }
+        
+        File translationDir = getTranslationDirectory();
+        if (!translationDir.exists()) {
+            return 0;
+        }
+        
+        File[] existingFiles = translationDir.listFiles();
+        if (existingFiles == null) {
+            return 0;
+        }
+        
+        int deletedCount = 0;
+        for (File file : existingFiles) {
+            if (file.isFile() && isTranslationFile(file.getName())) {
+                String locale = extractLocaleFromFilename(file.getName());
+                
+                // Delete if locale is not in supported list
+                if (!supportedLocales.contains(locale)) {
+                    try {
+                        if (file.delete()) {
+                            LOGGER.info("Deleted unsupported locale file: " + file.getName());
+                            deletedCount++;
+                        }
+                    } catch (Exception e) {
+                        LOGGER.warning("Failed to delete unsupported locale file " + file.getName() + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+        
+        if (deletedCount > 0) {
+            LOGGER.info("Manually cleaned up " + deletedCount + " unsupported locale files");
+        } else {
+            LOGGER.info("No unsupported locale files found to clean up");
+        }
+        
+        return deletedCount;
+    }
+
     @NotNull
     private File getTranslationDirectory() {
         return new File(plugin.getDataFolder(), configuration.translationDirectory());
@@ -222,8 +273,51 @@ public final class TranslationLoader {
         }
     }
 
+    /**
+     * Cleans up translation files for unsupported locales if filtering is enabled.
+     * This removes files that were extracted in previous runs with different configurations.
+     * Only runs in debug mode to avoid accidentally deleting user-customized files.
+     */
+    private void cleanupUnsupportedLocaleFiles(@NotNull File translationDir) {
+        Set<String> supportedLocales = configuration.supportedLocales();
+        if (supportedLocales.isEmpty() || !configuration.debugMode()) {
+            return; // No filtering enabled or not in debug mode
+        }
+        
+        File[] existingFiles = translationDir.listFiles();
+        if (existingFiles == null) {
+            return;
+        }
+        
+        int deletedCount = 0;
+        for (File file : existingFiles) {
+            if (file.isFile() && isTranslationFile(file.getName())) {
+                String locale = extractLocaleFromFilename(file.getName());
+                
+                // Delete if locale is not in supported list
+                if (!supportedLocales.contains(locale)) {
+                    try {
+                        if (file.delete()) {
+                            LOGGER.info("Deleted unsupported locale file: " + file.getName());
+                            deletedCount++;
+                        }
+                    } catch (Exception e) {
+                        LOGGER.warning("Failed to delete unsupported locale file " + file.getName() + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+        
+        if (deletedCount > 0) {
+            LOGGER.info("Cleaned up " + deletedCount + " unsupported locale files (debug mode)");
+        }
+    }
+
     private void extractResourceFiles(@NotNull File translationDir) {
         String translationPath = configuration.translationDirectory();
+        
+        // Clean up unsupported locale files if filtering is enabled
+        cleanupUnsupportedLocaleFiles(translationDir);
         
         // First try: Use Bukkit's saveResource for common locale files (most reliable)
         extractUsingBukkitSaveResource(translationDir, translationPath);
@@ -249,6 +343,12 @@ public final class TranslationLoader {
         Set<String> supportedLocales = configuration.supportedLocales();
         boolean filterEnabled = !supportedLocales.isEmpty();
         
+        if (filterEnabled) {
+            LOGGER.info("Extracting translation files only for supported locales: " + String.join(", ", supportedLocales));
+        } else {
+            LOGGER.info("No locale filtering configured - extracting all available translation files");
+        }
+        
         int extractedCount = 0;
         int skippedCount = 0;
         for (String locale : commonLocales) {
@@ -264,6 +364,7 @@ public final class TranslationLoader {
             String resourcePath = translationPath + "/" + locale + ".yml";
             File targetFile = new File(translationDir, locale + ".yml");
             
+            // Only extract if file doesn't exist
             if (!targetFile.exists()) {
                 try {
                     // Check if resource exists before trying to save
@@ -278,6 +379,8 @@ public final class TranslationLoader {
                 } catch (Exception e) {
                     LOGGER.fine("Could not extract " + locale + ".yml via Bukkit: " + e.getMessage());
                 }
+            } else if (configuration.debugMode()) {
+                LOGGER.fine("Translation file already exists: " + locale + ".yml");
             }
         }
         
@@ -307,6 +410,14 @@ public final class TranslationLoader {
             
             Set<String> supportedLocales = configuration.supportedLocales();
             boolean filterEnabled = !supportedLocales.isEmpty();
+            
+            if (configuration.debugMode()) {
+                if (filterEnabled) {
+                    LOGGER.info("JAR scanning will filter for supported locales: " + String.join(", ", supportedLocales));
+                } else {
+                    LOGGER.info("JAR scanning with no locale filtering");
+                }
+            }
             
             try (var jar = new java.util.jar.JarFile(jarFile)) {
                 var entries = jar.entries();
