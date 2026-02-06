@@ -67,35 +67,37 @@ tasks {
     }
 }
 
-publishing {
-    publications {
-        named<MavenPublication>("maven") {
-            artifactId = "jextranslate"
-            pom {
-                url.set("https://github.com/jexcellence/jextranslate")
-                developers {
-                    developer {
-                        id.set("jexcellence")
-                        name.set("JExcellence Team")
-                        email.set("contact@jexcellence.de")
-                    }
-                }
-                scm {
-                    connection.set("scm:git:git://github.com/jexcellence/jextranslate.git")
-                    developerConnection.set("scm:git:ssh://github.com/jexcellence/jextranslate.git")
+afterEvaluate {
+    publishing {
+        publications {
+            named<MavenPublication>("maven") {
+                artifactId = "jextranslate"
+                pom {
                     url.set("https://github.com/jexcellence/jextranslate")
+                    developers {
+                        developer {
+                            id.set("jexcellence")
+                            name.set("JExcellence Team")
+                            email.set("contact@jexcellence.de")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/jexcellence/jextranslate.git")
+                        developerConnection.set("scm:git:ssh://github.com/jexcellence/jextranslate.git")
+                        url.set("https://github.com/jexcellence/jextranslate")
+                    }
                 }
             }
         }
-    }
-    
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/jexcellence/jextranslate")
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+        
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/jexcellence/jextranslate")
+                credentials {
+                    username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                    password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                }
             }
         }
     }
