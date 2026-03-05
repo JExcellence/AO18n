@@ -50,17 +50,20 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
     private final R18nManager r18nManager;
     private final VersionedMessageSender messageSender;
     private final TranslationExportService exportService;
+    private String commandPath;
 
     public PR18nCommand(@NotNull JavaPlugin loadedPlugin, @NotNull R18nManager r18nManager) {
         this.loadedPlugin = loadedPlugin;
         this.r18nManager = r18nManager;
         this.messageSender = r18nManager.getMessageSender();
         this.exportService = new TranslationExportService();
+        this.commandPath = "/" + loadedPlugin.getName().toLowerCase(Locale.ROOT) + ":r18n";
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
                               @NotNull String label, @NotNull String[] args) {
+        this.commandPath = "/" + label.toLowerCase(Locale.ROOT);
         boolean isPlayer = sender instanceof Player;
         Player player = isPlayer ? (Player) sender : null;
 
@@ -201,11 +204,11 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         if (isPlayer && player != null) {
             Component usage = MINI_MESSAGE.deserialize(
                     "<gradient:#f39c12:#e67e22>📤 Export Usage</gradient>\n" +
-                    "<gray>Usage: <yellow>/r18n export <format></yellow></gray>\n" +
+                    "<gray>Usage: <yellow>" + commandPath + " export <format></yellow></gray>\n" +
                     "<gray>Formats: <green>csv</green>, <green>json</green>, <green>yaml</green></gray>");
             if (messageSender != null) messageSender.sendMessage(player, usage);
         } else {
-            sender.sendMessage("[R18n] Usage: /r18n export <format>");
+            sender.sendMessage("[R18n] Usage: " + commandPath + " export <format>");
             sender.sendMessage("[R18n] Formats: csv, json, yaml");
         }
     }
@@ -487,7 +490,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         );
 
         return button.hoverEvent(HoverEvent.showText(hoverText))
-                .clickEvent(ClickEvent.runCommand("/r18n missing " + locale + " 1"));
+                .clickEvent(ClickEvent.runCommand(commandPath + " missing " + locale + " 1"));
     }
 
     private String getDarkerShade(@NotNull String hexColor) {
@@ -565,7 +568,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         if (currentPage > 1) {
             Component prevButton = MINI_MESSAGE.deserialize("<gradient:#2ecc71:#27ae60>[← Previous]</gradient>")
                     .hoverEvent(HoverEvent.showText(MINI_MESSAGE.deserialize("<gradient:#2ecc71:#27ae60>Go to page " + (currentPage - 1) + "</gradient>")))
-                    .clickEvent(ClickEvent.runCommand("/r18n missing " + locale + " " + (currentPage - 1)));
+                    .clickEvent(ClickEvent.runCommand(commandPath + " missing " + locale + " " + (currentPage - 1)));
             navigation = navigation.append(prevButton);
         } else {
             navigation = navigation.append(MINI_MESSAGE.deserialize("<dark_gray>[← Previous]</dark_gray>"));
@@ -578,7 +581,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         if (currentPage < totalPages) {
             Component nextButton = MINI_MESSAGE.deserialize("<gradient:#2ecc71:#27ae60>[Next →]</gradient>")
                     .hoverEvent(HoverEvent.showText(MINI_MESSAGE.deserialize("<gradient:#2ecc71:#27ae60>Go to page " + (currentPage + 1) + "</gradient>")))
-                    .clickEvent(ClickEvent.runCommand("/r18n missing " + locale + " " + (currentPage + 1)));
+                    .clickEvent(ClickEvent.runCommand(commandPath + " missing " + locale + " " + (currentPage + 1)));
             navigation = navigation.append(nextButton);
         } else {
             navigation = navigation.append(MINI_MESSAGE.deserialize("<dark_gray>[Next →]</dark_gray>"));
@@ -587,7 +590,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         navigation = navigation.append(Component.text(" "))
                 .append(MINI_MESSAGE.deserialize("<gradient:#3498db:#2980b9>[← Back to Locales]</gradient>")
                         .hoverEvent(HoverEvent.showText(MINI_MESSAGE.deserialize("<gradient:#3498db:#2980b9>Return to locale selection</gradient>")))
-                        .clickEvent(ClickEvent.runCommand("/r18n missing")));
+                        .clickEvent(ClickEvent.runCommand(commandPath + " missing")));
 
         if (messageSender != null) {
             messageSender.sendMessage(player, navigation);
@@ -606,7 +609,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         );
         Component backButton = MINI_MESSAGE.deserialize("<gradient:#3498db:#2980b9>[← Back to Locales]</gradient>")
                 .hoverEvent(HoverEvent.showText(MINI_MESSAGE.deserialize("<gradient:#3498db:#2980b9>Return to locale selection</gradient>")))
-                .clickEvent(ClickEvent.runCommand("/r18n missing"));
+                .clickEvent(ClickEvent.runCommand(commandPath + " missing"));
 
         if (messageSender != null) {
             messageSender.sendMessage(player, Component.empty());
@@ -624,10 +627,10 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
     private void sendEnhancedUsageMessage(@NotNull Player player) {
         Component headerLine = MINI_MESSAGE.deserialize("<gradient:#9b59b6:#8e44ad>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</gradient>");
         Component title = MINI_MESSAGE.deserialize("<gradient:#9b59b6:#8e44ad>🛠 R18n Administration Commands</gradient>");
-        Component reloadCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#2ecc71:#27ae60>/r18n reload</gradient> <dark_gray>»</dark_gray> <gray>Reload translation files</gray>");
-        Component missingCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#e74c3c:#c0392b>/r18n missing</gradient> <dark_gray>»</dark_gray> <gray>Analyze missing translation keys</gray>");
-        Component exportCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#f39c12:#e67e22>/r18n export <format></gradient> <dark_gray>»</dark_gray> <gray>Export translations (csv/json/yaml)</gray>");
-        Component metricsCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#3498db:#2980b9>/r18n metrics</gradient> <dark_gray>»</dark_gray> <gray>View translation usage statistics</gray>");
+        Component reloadCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#2ecc71:#27ae60>" + commandPath + " reload</gradient> <dark_gray>»</dark_gray> <gray>Reload translation files</gray>");
+        Component missingCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#e74c3c:#c0392b>" + commandPath + " missing</gradient> <dark_gray>»</dark_gray> <gray>Analyze missing translation keys</gray>");
+        Component exportCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#f39c12:#e67e22>" + commandPath + " export <format></gradient> <dark_gray>»</dark_gray> <gray>Export translations (csv/json/yaml)</gray>");
+        Component metricsCommand = MINI_MESSAGE.deserialize("<dark_gray>▪ <gradient:#3498db:#2980b9>" + commandPath + " metrics</gradient> <dark_gray>»</dark_gray> <gray>View translation usage statistics</gray>");
 
         if (messageSender != null) {
             messageSender.sendMessage(player, Component.empty());
@@ -701,10 +704,10 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
 
     private void sendConsoleUsageMessage(@NotNull CommandSender sender) {
         sender.sendMessage("========== R18n Administration Commands ==========");
-        sender.sendMessage("/r18n reload - Reload translation files");
-        sender.sendMessage("/r18n missing [locale] [page] - Analyze missing translation keys");
-        sender.sendMessage("/r18n export <format> - Export translations (csv/json/yaml)");
-        sender.sendMessage("/r18n metrics - View translation usage statistics");
+        sender.sendMessage(commandPath + " reload - Reload translation files");
+        sender.sendMessage(commandPath + " missing [locale] [page] - Analyze missing translation keys");
+        sender.sendMessage(commandPath + " export <format> - Export translations (csv/json/yaml)");
+        sender.sendMessage(commandPath + " metrics - View translation usage statistics");
         sender.sendMessage("==================================================");
     }
 
@@ -736,7 +739,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         }
 
         sender.sendMessage("");
-        sender.sendMessage("Use: /r18n missing <locale> [page] to view missing keys");
+        sender.sendMessage("Use: " + commandPath + " missing <locale> [page] to view missing keys");
         sender.sendMessage("==============================================");
     }
 
@@ -774,7 +777,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         StringBuilder navInfo = new StringBuilder("Navigation: ");
         
         if (currentPage > 1) {
-            navInfo.append("/r18n missing ").append(locale).append(" ").append(currentPage - 1).append(" (prev)");
+            navInfo.append(commandPath).append(" missing ").append(locale).append(" ").append(currentPage - 1).append(" (prev)");
         }
         
         if (currentPage > 1 && currentPage < totalPages) {
@@ -782,7 +785,7 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         }
         
         if (currentPage < totalPages) {
-            navInfo.append("/r18n missing ").append(locale).append(" ").append(currentPage + 1).append(" (next)");
+            navInfo.append(commandPath).append(" missing ").append(locale).append(" ").append(currentPage + 1).append(" (next)");
         }
         
         if (currentPage == 1 && currentPage == totalPages) {

@@ -3,6 +3,7 @@
  *
  * <p><strong>Available Commands.</strong>
  * <ul>
+ *     <li>{@link PR18n} - Command-framework bridge that delegates to the runtime handler.</li>
  *     <li>{@link PR18nCommand} - Modern R18n command for translation management using the new API.</li>
  * </ul>
  *
