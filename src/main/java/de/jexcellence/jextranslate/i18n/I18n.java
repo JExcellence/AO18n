@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Main entry point for internationalization (i18n) message handling in the R18n system.
@@ -28,7 +29,7 @@ import java.util.Map;
  * }</pre>
  *
  * @author JExcellence
- * @version 2.0.0
+ * @version 2.0.1
  * @since 2.0.0
  */
 public class I18n {
@@ -136,8 +137,8 @@ public class I18n {
          * @throws NullPointerException if key or player is null
          */
         public Builder(@NotNull String key, @NotNull Player player) {
-            this.key = key;
-            this.player = player;
+            this.key = Objects.requireNonNull(key, "key");
+            this.player = Objects.requireNonNull(player, "player");
         }
 
         /**
@@ -147,7 +148,7 @@ public class I18n {
          * @throws NullPointerException if key is null
          */
         public Builder(@NotNull String key) {
-            this.key = key;
+            this.key = Objects.requireNonNull(key, "key");
             this.player = null;
         }
 
