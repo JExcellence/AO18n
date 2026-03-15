@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Advanced placeholder formatting with ICU-style plurals, choice formats,
+ * Advanced placeholder formatting with ICU-style plurals, choice formats,.
  * and locale-aware number/date formatting.
  *
  * @author JExcellence

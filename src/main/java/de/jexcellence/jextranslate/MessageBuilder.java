@@ -272,8 +272,8 @@ public final class MessageBuilder {
 
     /**
      * Converts the message to a Bedrock-compatible legacy string.
-     * <p>
-     * This method automatically strips unsupported formatting (click events, hover events)
+ *
+ * <p>This method automatically strips unsupported formatting (click events, hover events)
      * and converts hex colors according to the configured fallback strategy.
      *
      * @param player the target player (null for default locale)
@@ -291,8 +291,8 @@ public final class MessageBuilder {
 
     /**
      * Converts the message to multiple Bedrock-compatible legacy strings.
-     * <p>
-     * This method is useful for multi-line messages that need to be displayed
+ *
+ * <p>This method is useful for multi-line messages that need to be displayed
      * on Bedrock clients.
      *
      * @param player the target player (null for default locale)
@@ -314,8 +314,8 @@ public final class MessageBuilder {
 
     /**
      * Converts the message to a plain text string with all formatting stripped.
-     * <p>
-     * This method is useful for Bedrock forms and other contexts where
+ *
+ * <p>This method is useful for Bedrock forms and other contexts where
      * only plain text is supported (no colors, no formatting).
      *
      * @param player the target player (null for default locale)
@@ -329,8 +329,8 @@ public final class MessageBuilder {
 
     /**
      * Converts the message to multiple plain text strings.
-     * <p>
-     * This method is useful for multi-line messages in Bedrock forms.
+ *
+ * <p>This method is useful for multi-line messages in Bedrock forms.
      *
      * @param player the target player (null for default locale)
      * @return a list of plain text strings with all formatting removed
@@ -348,8 +348,8 @@ public final class MessageBuilder {
 
     /**
      * Checks if the target player is a Bedrock Edition player.
-     * <p>
-     * This method uses the BedrockDetectionCache to efficiently determine
+ *
+ * <p>This method uses the BedrockDetectionCache to efficiently determine
      * if a player is connecting via Bedrock Edition through Geyser/Floodgate.
      *
      * @param player the player to check

@@ -71,8 +71,8 @@ public final class VersionedMessageSender {
 
     /**
      * Sends a component message to a player using the appropriate method for the server version.
-     * <p>
-     * If the player is detected as a Bedrock player and Bedrock support is enabled,
+ *
+ * <p>If the player is detected as a Bedrock player and Bedrock support is enabled,
      * the message will be automatically converted to legacy format.
      *
      * @param player    the target player
@@ -239,8 +239,8 @@ public final class VersionedMessageSender {
 
     /**
      * Sends a Bedrock-compatible message to a player.
-     * <p>
-     * Geyser handles Adventure components properly - it only lacks support for
+ *
+ * <p>Geyser handles Adventure components properly - it only lacks support for
      * click events, hover events, and custom fonts. We strip those unsupported
      * features but keep the component format with colors intact.
      *

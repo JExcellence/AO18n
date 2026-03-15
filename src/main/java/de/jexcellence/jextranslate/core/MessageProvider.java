@@ -75,6 +75,12 @@ public final class MessageProvider {
         }
     }
 
+    /**
+     * Creates a provider with optional version detection and runtime feature checks.
+     *
+     * @param configuration   translation configuration values
+     * @param versionDetector detector used to probe optional platform integrations
+     */
     public MessageProvider(@NotNull R18nConfiguration configuration, @Nullable VersionDetector versionDetector) {
         this.configuration = configuration;
         this.versionDetector = versionDetector;
@@ -100,6 +106,15 @@ public final class MessageProvider {
         this.metrics = configuration.metricsEnabled() ? new TranslationMetrics() : null;
     }
 
+    /**
+     * Returns a single merged component for a translation key.
+     *
+     * @param key          translation key
+     * @param locale       locale code used for lookup
+     * @param placeholders runtime placeholder values
+     * @param includePrefix whether prefix messages should be prepended
+     * @return merged component result for the requested key
+     */
     @NotNull
     public Component getComponent(@NotNull String key, @NotNull String locale,
                                    @NotNull Map<String, Object> placeholders, boolean includePrefix) {
@@ -145,6 +160,15 @@ public final class MessageProvider {
         return hash;
     }
 
+    /**
+     * Returns all rendered components for a translation key.
+     *
+     * @param key           translation key
+     * @param locale        locale code used for lookup
+     * @param placeholders  runtime placeholder values
+     * @param includePrefix whether prefix messages should be prepended
+     * @return ordered component list for the requested key
+     */
     @NotNull
     public List<Component> getComponents(@NotNull String key, @NotNull String locale,
                                           @NotNull Map<String, Object> placeholders, boolean includePrefix) {
@@ -173,6 +197,15 @@ public final class MessageProvider {
         return components;
     }
 
+    /**
+     * Returns a plain-text representation of a translation key.
+     *
+     * @param key           translation key
+     * @param locale        locale code used for lookup
+     * @param placeholders  runtime placeholder values
+     * @param includePrefix whether prefix messages should be prepended
+     * @return serialized plain-text message
+     */
     @NotNull
     public String getString(@NotNull String key, @NotNull String locale,
                             @NotNull Map<String, Object> placeholders, boolean includePrefix) {
@@ -180,6 +213,15 @@ public final class MessageProvider {
         return plainSerializer.serialize(component);
     }
 
+    /**
+     * Returns plain-text lines for a translation key.
+     *
+     * @param key           translation key
+     * @param locale        locale code used for lookup
+     * @param placeholders  runtime placeholder values
+     * @param includePrefix whether prefix messages should be prepended
+     * @return plain-text lines for each rendered component
+     */
     @NotNull
     public List<String> getStrings(@NotNull String key, @NotNull String locale,
                                     @NotNull Map<String, Object> placeholders, boolean includePrefix) {
@@ -318,19 +360,31 @@ public final class MessageProvider {
         return result;
     }
 
+    /**
+     * Sets translationLoader.
+     */
     public void setTranslationLoader(@NotNull TranslationLoader translationLoader) {
         this.translationLoader = translationLoader;
     }
 
+    /**
+     * Returns whether placeholderAPIAvailable.
+     */
     public boolean isPlaceholderAPIAvailable() {
         return placeholderAPIAvailable;
     }
 
+    /**
+     * Gets versionDetector.
+     */
     @NotNull
     public VersionDetector getVersionDetector() {
         return versionDetector;
     }
 
+    /**
+     * Gets configuration.
+     */
     @NotNull
     public R18nConfiguration getConfiguration() {
         return configuration;

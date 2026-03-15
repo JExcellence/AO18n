@@ -81,6 +81,9 @@ public final class TranslationFileWatcher implements Runnable {
         LOGGER.info("File watcher registered for directory: " + translationsDir);
     }
 
+    /**
+     * Executes run.
+     */
     @Override
     public void run() {
         LOGGER.info("Translation file watcher started");

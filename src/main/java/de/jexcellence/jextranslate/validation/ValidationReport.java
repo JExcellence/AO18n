@@ -37,16 +37,31 @@ public record ValidationReport(
         namingViolations = Collections.unmodifiableSet(new HashSet<>(namingViolations));
     }
 
+    /**
+     * Indicates whether the report contains any issues.
+     *
+     * @return {@code true} when at least one issue category is non-empty
+     */
     public boolean hasIssues() {
         return !missingKeys.isEmpty() || !unusedKeys.isEmpty() || !formatErrors.isEmpty() ||
                 !placeholderIssues.isEmpty() || !namingViolations.isEmpty();
     }
 
+    /**
+     * Returns the aggregate issue count across all tracked categories.
+     *
+     * @return total number of issues
+     */
     public int getTotalIssues() {
         return missingKeys.size() + unusedKeys.size() + formatErrors.size() +
                 placeholderIssues.size() + namingViolations.size();
     }
 
+    /**
+     * Returns a merged set of all keys involved in any issue category.
+     *
+     * @return set containing every problematic key
+     */
     @NotNull
     public Set<String> getAllProblematicKeys() {
         Set<String> allKeys = new HashSet<>();
@@ -58,6 +73,11 @@ public record ValidationReport(
         return allKeys;
     }
 
+    /**
+     * Calculates a validation score from the issue count and total key count.
+     *
+     * @return percentage score where {@code 100.0} indicates no issues
+     */
     public double getValidationScore() {
         int totalKeys = statistics.totalKeys();
         if (totalKeys == 0) return 100.0;
@@ -65,6 +85,11 @@ public record ValidationReport(
         return Math.max(0.0, 100.0 - (issues * 100.0 / totalKeys));
     }
 
+    /**
+     * Builds a human-readable report summary.
+     *
+     * @return multi-line summary string
+     */
     @NotNull
     public String getSummary() {
         if (!hasIssues()) {
@@ -84,11 +109,19 @@ public record ValidationReport(
         return summary.toString();
     }
 
+    /**
+     * Creates a builder for constructing immutable validation reports.
+     *
+     * @return empty builder instance
+     */
     @NotNull
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Mutable builder used to construct {@link ValidationReport} instances.
+     */
     public static final class Builder {
         private Instant timestamp = Instant.now();
         private final Set<String> missingKeys = new HashSet<>();
@@ -98,48 +131,95 @@ public record ValidationReport(
         private final Set<String> namingViolations = new HashSet<>();
         private ValidationStatistics statistics = ValidationStatistics.empty();
 
+        /**
+         * Sets the report timestamp.
+         *
+         * @param timestamp validation time to store in the report
+         * @return this builder
+         */
         @NotNull
         public Builder timestamp(@NotNull Instant timestamp) {
             this.timestamp = timestamp;
             return this;
         }
 
+        /**
+         * Adds a key that is missing from at least one locale.
+         *
+         * @param key missing translation key
+         * @return this builder
+         */
         @NotNull
         public Builder addMissingKey(@NotNull String key) {
             this.missingKeys.add(key);
             return this;
         }
 
+        /**
+         * Adds multiple keys that are missing from at least one locale.
+         *
+         * @param keys missing translation keys
+         * @return this builder
+         */
         @NotNull
         public Builder addMissingKeys(@NotNull Collection<String> keys) {
             this.missingKeys.addAll(keys);
             return this;
         }
 
+        /**
+         * Adds a key with one or more formatting errors.
+         *
+         * @param key translation key with invalid formatting
+         * @return this builder
+         */
         @NotNull
         public Builder addFormatError(@NotNull String key) {
             this.formatErrors.add(key);
             return this;
         }
 
+        /**
+         * Adds a key with inconsistent or invalid placeholders.
+         *
+         * @param key translation key with placeholder issues
+         * @return this builder
+         */
         @NotNull
         public Builder addPlaceholderIssue(@NotNull String key) {
             this.placeholderIssues.add(key);
             return this;
         }
 
+        /**
+         * Adds a key that violates naming conventions.
+         *
+         * @param key translation key with naming violations
+         * @return this builder
+         */
         @NotNull
         public Builder addNamingViolation(@NotNull String key) {
             this.namingViolations.add(key);
             return this;
         }
 
+        /**
+         * Sets aggregate validation statistics.
+         *
+         * @param statistics computed validation statistics
+         * @return this builder
+         */
         @NotNull
         public Builder statistics(@NotNull ValidationStatistics statistics) {
             this.statistics = statistics;
             return this;
         }
 
+        /**
+         * Builds an immutable report from the collected values.
+         *
+         * @return new validation report snapshot
+         */
         @NotNull
         public ValidationReport build() {
             return new ValidationReport(timestamp, missingKeys, unusedKeys, formatErrors,

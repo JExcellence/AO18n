@@ -18,11 +18,11 @@ import java.util.logging.Logger;
 
 /**
  * Manages caching of Bedrock player detection results for performance optimization.
- * <p>
- * This class caches the Bedrock status of players to avoid repeated lookups to the
+ *
+ * <p>This class caches the Bedrock status of players to avoid repeated lookups to the
  * GeyserService. The cache is automatically cleaned up when players disconnect.
- * <p>
- * The class uses lazy initialization to look up the GeyserService from RPlatform,
+ *
+ * <p>The class uses lazy initialization to look up the GeyserService from RPlatform,
  * gracefully degrading if the service is unavailable.
  *
  * @since 3.1.0
@@ -65,8 +65,8 @@ public final class BedrockDetectionCache implements Listener {
 
     /**
      * Checks if a player is a Bedrock player, using the cache if available.
-     * <p>
-     * On first check for a player, the result is fetched from GeyserService and cached.
+ *
+ * <p>On first check for a player, the result is fetched from GeyserService and cached.
      * Subsequent checks return the cached value.
      *
      * @param player the player to check

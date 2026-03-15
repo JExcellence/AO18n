@@ -18,7 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Lightweight logging adapter that routes diagnostics through Raindrop Central's {@code CentralLogger}
+ * Lightweight logging adapter that routes diagnostics through Raindrop Central's {@code CentralLogger}.
  * when available, falling back to JUL when executed outside the platform. Provides helpers for
  * sanitising structured context and anonymising sensitive identifiers before they reach log files.
  *

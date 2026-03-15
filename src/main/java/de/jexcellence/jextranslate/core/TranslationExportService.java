@@ -35,11 +35,11 @@ public final class TranslationExportService {
      * Supported export formats.
      */
     public enum ExportFormat {
-        /** Comma-separated values with key, locale, value columns */
+        /** Comma-separated values with key, locale, value columns. */
         CSV,
-        /** JSON format with flat key-value structure per locale */
+        /** JSON format with flat key-value structure per locale. */
         JSON,
-        /** YAML format */
+        /** YAML format. */
         YAML
     }
 

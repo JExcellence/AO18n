@@ -48,6 +48,12 @@ public final class TranslationLoader {
     // Track which locales have YAML files (for precedence handling)
     private final Set<String> yamlLocales = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Creates a translation loader for one plugin runtime.
+     *
+     * @param plugin        plugin that owns translation resources and data folder
+     * @param configuration translation loading configuration
+     */
     public TranslationLoader(@NotNull JavaPlugin plugin, @NotNull R18nConfiguration configuration) {
         this.plugin = plugin;
         this.configuration = configuration;
@@ -81,6 +87,11 @@ public final class TranslationLoader {
         UNKNOWN
     }
 
+    /**
+     * Loads translations asynchronously from resource and data directories.
+     *
+     * @return a future that completes when translation loading finishes
+     */
     @NotNull
     public CompletableFuture<Void> loadTranslations() {
         return CompletableFuture.runAsync(() -> {
@@ -158,6 +169,13 @@ public final class TranslationLoader {
         });
     }
 
+    /**
+     * Returns the raw translation lines for a key and locale with fallback to default locale.
+     *
+     * @param key    translation key to resolve
+     * @param locale locale code requested by the caller
+     * @return optional raw lines when translation data exists
+     */
     @NotNull
     public Optional<List<String>> getRawTranslation(@NotNull String key, @NotNull String locale) {
         Map<String, List<String>> localeMap = translations.get(key);
@@ -177,24 +195,52 @@ public final class TranslationLoader {
         return Optional.empty();
     }
 
+    /**
+     * Checks whether any translation lines exist for a key in the requested locale or fallback locale.
+     *
+     * @param key    translation key to resolve
+     * @param locale locale code requested by the caller
+     * @return {@code true} when at least one translation line exists
+     */
     public boolean hasKey(@NotNull String key, @NotNull String locale) {
         return getRawTranslation(key, locale).isPresent();
     }
 
+    /**
+     * Returns all currently loaded translation keys.
+     *
+     * @return copy of all loaded keys
+     */
     @NotNull
     public Set<String> getAllKeys() {
         return new HashSet<>(translations.keySet());
     }
 
+    /**
+     * Returns all locale codes loaded during the last load cycle.
+     *
+     * @return copy of loaded locale identifiers
+     */
     @NotNull
     public Set<String> getLoadedLocales() {
         return new HashSet<>(loadedLocales);
     }
 
+    /**
+     * Returns the number of unique translation keys in memory.
+     *
+     * @return total number of loaded keys
+     */
     public int getTotalKeyCount() {
         return translations.size();
     }
 
+    /**
+     * Returns keys that are unresolved for a locale, considering default-locale fallback.
+     *
+     * @param locale locale to validate
+     * @return keys that are missing for the requested locale
+     */
     @NotNull
     public Set<String> getMissingKeys(@NotNull String locale) {
         Set<String> missingKeys = new HashSet<>();
@@ -219,6 +265,11 @@ public final class TranslationLoader {
         return missingKeys;
     }
 
+    /**
+     * Returns a defensive copy of all loaded translations.
+     *
+     * @return nested key and locale map containing all translation lines
+     */
     @NotNull
     public Map<String, Map<String, List<String>>> getAllTranslations() {
         Map<String, Map<String, List<String>>> copy = new HashMap<>();
@@ -232,6 +283,7 @@ public final class TranslationLoader {
      * Manually cleans up translation files for unsupported locales.
      * This can be called by users who want to remove files for locales not in their supportedLocales configuration.
      * 
+     *
      * @return the number of files that were deleted
      */
     public int cleanupUnsupportedFiles() {
@@ -550,6 +602,7 @@ public final class TranslationLoader {
     /**
      * Extracts the locale code from a translation filename.
      * 
+     *
      * @param fileName the filename (e.g., "en_US.yml", "de_DE.json")
      * @return the locale code (e.g., "en_US", "de_DE")
      */

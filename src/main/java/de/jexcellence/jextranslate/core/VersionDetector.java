@@ -55,6 +55,9 @@ public final class VersionDetector {
             this.displayName = displayName;
         }
 
+        /**
+         * Gets displayName.
+         */
         public String getDisplayName() {
             return displayName;
         }

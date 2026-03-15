@@ -18,13 +18,13 @@ import java.util.Objects;
  */
 public final class LoreFormatter {
 
-    /** Default maximum width for lore lines */
+    /** Default maximum width for lore lines. */
     public static final int DEFAULT_MAX_WIDTH = 40;
 
-    /** Legacy section symbol serializer */
+    /** Legacy section symbol serializer. */
     private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 
-    /** Plain text serializer */
+    /** Plain text serializer. */
     private static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
 
     private LoreFormatter() {
@@ -183,6 +183,9 @@ public final class LoreFormatter {
 
     /**
      * Gets the visible length of a string (excluding color codes).
+     *
+     * @param text text that may contain legacy color codes
+     * @return number of visible characters after color-code stripping
      */
     public static int getVisibleLength(@NotNull final String text) {
         int length = 0;
@@ -205,6 +208,9 @@ public final class LoreFormatter {
 
     /**
      * Strips all color codes from a string.
+     *
+     * @param text text that may contain legacy color codes
+     * @return text with legacy color codes removed
      */
     @NotNull
     public static String stripColors(@NotNull final String text) {
@@ -228,6 +234,9 @@ public final class LoreFormatter {
 
     /**
      * Converts a Component to legacy lore format.
+     *
+     * @param component component to serialize
+     * @return legacy-string representation of the component
      */
     @NotNull
     public static String toLegacy(@NotNull final Component component) {
@@ -236,6 +245,9 @@ public final class LoreFormatter {
 
     /**
      * Converts a Component to plain text.
+     *
+     * @param component component to serialize
+     * @return plain-text representation of the component
      */
     @NotNull
     public static String toPlainText(@NotNull final Component component) {

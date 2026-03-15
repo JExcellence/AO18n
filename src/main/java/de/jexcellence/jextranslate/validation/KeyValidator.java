@@ -41,6 +41,9 @@ public final class KeyValidator {
 
     private final R18nConfiguration configuration;
 
+    /**
+     * Executes KeyValidator.
+     */
     public KeyValidator(@NotNull R18nConfiguration configuration) {
         this.configuration = configuration;
     }
@@ -401,6 +404,9 @@ public final class KeyValidator {
         return missingKeys;
     }
 
+    /**
+     * Gets configuration.
+     */
     @NotNull
     public R18nConfiguration getConfiguration() {
         return configuration;

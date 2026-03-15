@@ -43,6 +43,9 @@ public class I18nConsoleWrapper implements II18nVersionWrapper<Component> {
         this.includePrefix = includePrefix;
     }
 
+    /**
+     * Executes sendMessage.
+     */
     @Override
     public void sendMessage() {
         R18nManager manager = R18nManager.getInstance();
@@ -51,6 +54,9 @@ public class I18nConsoleWrapper implements II18nVersionWrapper<Component> {
         }
     }
 
+    /**
+     * Executes sendMessages.
+     */
     @Override
     public void sendMessages() {
         R18nManager manager = R18nManager.getInstance();
@@ -61,42 +67,63 @@ public class I18nConsoleWrapper implements II18nVersionWrapper<Component> {
         }
     }
 
+    /**
+     * Gets messageType.
+     */
     @Override
     @NotNull
     public Component getMessageType() {
         return Component.empty();
     }
 
+    /**
+     * Executes displayMessage.
+     */
     @Override
     @NotNull
     public Component displayMessage() {
         throw new UnsupportedOperationException("This method is not supported for the console.");
     }
 
+    /**
+     * Executes displayMessages.
+     */
     @Override
     @NotNull
     public List<Component> displayMessages() {
         throw new UnsupportedOperationException("This method is not supported for the console.");
     }
 
+    /**
+     * Gets prefix.
+     */
     @Override
     @NotNull
     public Component getPrefix() {
         return this.joinComponents(this.getPrefixByKey());
     }
 
+    /**
+     * Gets messagesByKey.
+     */
     @Override
     @NotNull
     public List<Component> getMessagesByKey() {
         return this.getRawMessagesByKey(this.key);
     }
 
+    /**
+     * Gets prefixByKey.
+     */
     @Override
     @NotNull
     public List<Component> getPrefixByKey() {
         return this.getRawMessagesByKey(PREFIX_KEY);
     }
 
+    /**
+     * Gets messagesIncludingPlaceholdersAndPrefix.
+     */
     @Override
     @NotNull
     public List<Component> getMessagesIncludingPlaceholdersAndPrefix() {
@@ -107,24 +134,36 @@ public class I18nConsoleWrapper implements II18nVersionWrapper<Component> {
         return messages;
     }
 
+    /**
+     * Gets messagesIncludingPlaceholders.
+     */
     @Override
     @NotNull
     public List<Component> getMessagesIncludingPlaceholders() {
         return this.getMessagesByKey();
     }
 
+    /**
+     * Gets joinedMessage.
+     */
     @Override
     @NotNull
     public Component getJoinedMessage() {
         return this.joinComponents(this.getMessagesIncludingPlaceholdersAndPrefix());
     }
 
+    /**
+     * Gets message.
+     */
     @Override
     @NotNull
     public Component getMessage() {
         return this.joinComponents(this.getMessagesByKey());
     }
 
+    /**
+     * Gets formattedMessage.
+     */
     @Override
     @NotNull
     public Component getFormattedMessage() {
@@ -135,6 +174,9 @@ public class I18nConsoleWrapper implements II18nVersionWrapper<Component> {
         );
     }
 
+    /**
+     * Gets rawMessagesByKey.
+     */
     @Override
     @NotNull
     public List<Component> getRawMessagesByKey(@NotNull String key) {
@@ -167,12 +209,18 @@ public class I18nConsoleWrapper implements II18nVersionWrapper<Component> {
         return result;
     }
 
+    /**
+     * Executes replacePlaceholders.
+     */
     @Override
     @NotNull
     public List<Component> replacePlaceholders() {
         return new ArrayList<>(); // Placeholder for future PlaceholderAPI integration
     }
 
+    /**
+     * Executes asPlaceholder.
+     */
     @Override
     @NotNull
     public String asPlaceholder() {

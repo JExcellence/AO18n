@@ -16,8 +16,8 @@ import java.util.regex.Pattern;
 
 /**
  * Utility class for converting Adventure Components and MiniMessage strings to Bedrock-compatible legacy format.
- * <p>
- * Bedrock Edition clients only support legacy color codes (§ codes) and plain strings. This converter
+ *
+ * <p>Bedrock Edition clients only support legacy color codes (§ codes) and plain strings. This converter
  * handles the transformation of rich text components to a format that displays correctly on Bedrock clients.
  *
  * @since 3.1.0
@@ -60,8 +60,8 @@ public final class BedrockConverter {
 
     /**
      * Converts an Adventure Component to a Bedrock-compatible legacy string.
-     * <p>
-     * This method strips unsupported features (click events, hover events) and converts
+ *
+ * <p>This method strips unsupported features (click events, hover events) and converts
      * the component to legacy § color codes.
      *
      * @param component the component to convert
@@ -141,8 +141,8 @@ public final class BedrockConverter {
 
     /**
      * Converts a hex color string to the nearest legacy color code.
-     * <p>
-     * Uses Euclidean distance in RGB color space to find the closest match.
+ *
+ * <p>Uses Euclidean distance in RGB color space to find the closest match.
      *
      * @param hexColor the hex color (with or without # prefix, supports #RRGGBB and RRGGBB)
      * @return the legacy color code (e.g., "§6" for gold)
@@ -201,8 +201,8 @@ public final class BedrockConverter {
 
     /**
      * Strips all unsupported Bedrock formatting from a component.
-     * <p>
-     * Removes click events, hover events, insertion text, and custom fonts.
+ *
+ * <p>Removes click events, hover events, insertion text, and custom fonts.
      *
      * @param component the component to strip
      * @return a new component with unsupported formatting removed

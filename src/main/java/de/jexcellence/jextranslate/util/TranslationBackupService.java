@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Utility responsible for creating timestamped backups of translation files and pruning stale copies
+ * Utility responsible for creating timestamped backups of translation files and pruning stale copies.
  * after repository synchronisation. Backups are stored under {@code translations/backups} by default
  * with per-file retention to prevent unbounded growth.
  *
@@ -58,7 +58,7 @@ public final class TranslationBackupService {
     }
 
     /**
-     * Creates a backup for the provided file when it exists, copying attributes and emitting structured
+     * Creates a backup for the provided file when it exists, copying attributes and emitting structured.
      * diagnostics. When the file does not exist an empty optional is returned.
      *
      * @param source the file to back up

@@ -54,6 +54,9 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
         this.includePrefix = includePrefix;
     }
 
+    /**
+     * Executes sendMessage.
+     */
     @Override
     public void sendMessage() {
         R18nManager manager = R18nManager.getInstance();
@@ -71,6 +74,9 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
         }
     }
 
+    /**
+     * Executes sendMessages.
+     */
     @Override
     public void sendMessages() {
         R18nManager manager = R18nManager.getInstance();
@@ -91,42 +97,63 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
         }
     }
 
+    /**
+     * Gets messageType.
+     */
     @Override
     @NotNull
     public Component getMessageType() {
         return Component.text("Component");
     }
 
+    /**
+     * Executes displayMessage.
+     */
     @Override
     @NotNull
     public Component displayMessage() {
         return this.getFormattedMessage();
     }
 
+    /**
+     * Executes displayMessages.
+     */
     @Override
     @NotNull
     public List<Component> displayMessages() {
         return this.getMessagesIncludingPlaceholdersAndPrefix();
     }
 
+    /**
+     * Gets prefix.
+     */
     @Override
     @NotNull
     public Component getPrefix() {
         return this.getJoinedMessageByKey();
     }
 
+    /**
+     * Gets messagesByKey.
+     */
     @Override
     @NotNull
     public List<Component> getMessagesByKey() {
         return this.getRawMessagesByKey(this.key);
     }
 
+    /**
+     * Gets prefixByKey.
+     */
     @Override
     @NotNull
     public List<Component> getPrefixByKey() {
         return this.getRawMessagesByKey(PREFIX_KEY);
     }
 
+    /**
+     * Gets messagesIncludingPlaceholdersAndPrefix.
+     */
     @Override
     @NotNull
     public List<Component> getMessagesIncludingPlaceholdersAndPrefix() {
@@ -137,30 +164,45 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
         return messages;
     }
 
+    /**
+     * Gets type.
+     */
     @Override
     @NotNull
     public Class<Component> getType() {
         return Component.class;
     }
 
+    /**
+     * Gets messagesIncludingPlaceholders.
+     */
     @Override
     @NotNull
     public List<Component> getMessagesIncludingPlaceholders() {
         return this.getMessagesByKey();
     }
 
+    /**
+     * Gets joinedMessage.
+     */
     @Override
     @NotNull
     public Component getJoinedMessage() {
         return this.joinComponents(this.getMessagesIncludingPlaceholdersAndPrefix());
     }
 
+    /**
+     * Gets message.
+     */
     @Override
     @NotNull
     public Component getMessage() {
         return this.joinComponents(this.getMessagesByKey());
     }
 
+    /**
+     * Gets formattedMessage.
+     */
     @Override
     @NotNull
     public Component getFormattedMessage() {
@@ -172,6 +214,9 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
     }
 
 
+    /**
+     * Gets rawMessagesByKey.
+     */
     @Override
     @NotNull
     public List<Component> getRawMessagesByKey(@NotNull String key) {
@@ -204,12 +249,18 @@ public class UniversalI18nWrapper implements II18nVersionWrapper<Component> {
         return result;
     }
 
+    /**
+     * Executes replacePlaceholders.
+     */
     @Override
     @NotNull
     public List<Component> replacePlaceholders() {
         return new ArrayList<>(); // Placeholder for future PlaceholderAPI integration
     }
 
+    /**
+     * Executes asPlaceholder.
+     */
     @Override
     @NotNull
     public String asPlaceholder() {

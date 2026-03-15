@@ -52,6 +52,9 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
     private final TranslationExportService exportService;
     private String commandPath;
 
+    /**
+     * Executes PR18nCommand.
+     */
     public PR18nCommand(@NotNull JavaPlugin loadedPlugin, @NotNull R18nManager r18nManager) {
         this.loadedPlugin = loadedPlugin;
         this.r18nManager = r18nManager;
@@ -60,6 +63,9 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
         this.commandPath = "/" + loadedPlugin.getName().toLowerCase(Locale.ROOT) + ":r18n";
     }
 
+    /**
+     * Executes onCommand.
+     */
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
                               @NotNull String label, @NotNull String[] args) {
@@ -807,6 +813,9 @@ public class PR18nCommand implements CommandExecutor, TabCompleter {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
+    /**
+     * Executes onTabComplete.
+     */
     @Override
     @Nullable
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,

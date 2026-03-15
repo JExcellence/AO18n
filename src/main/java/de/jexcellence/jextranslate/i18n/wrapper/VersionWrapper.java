@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 /**
- * Simplified wrapper that provides a universal {@link II18nVersionWrapper} implementation
+ * Simplified wrapper that provides a universal {@link II18nVersionWrapper} implementation.
  * for all Minecraft versions. This class replaces the complex version-specific loading
  * with a single, unified approach that works across all supported Minecraft versions.
  *
@@ -23,7 +23,7 @@ public class VersionWrapper {
     private final II18nVersionWrapper<?> i18nVersionWrapper;
 
     /**
-     * Constructs a new VersionWrapper for the given player, message key, placeholders,
+     * Constructs a new VersionWrapper for the given player, message key, placeholders,.
      * and prefix inclusion flag. Uses the universal wrapper implementation that works
      * across all Minecraft versions.
      *

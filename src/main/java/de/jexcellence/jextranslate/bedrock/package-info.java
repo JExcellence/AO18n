@@ -1,13 +1,13 @@
 /**
  * Bedrock Edition support utilities for JExTranslate.
- * <p>
- * This package provides utilities for detecting Bedrock Edition players and converting
+ *
+ * <p>This package provides utilities for detecting Bedrock Edition players and converting
  * Adventure Components and MiniMessage strings to Bedrock-compatible legacy format.
  * Bedrock Edition clients only support legacy color codes (§ codes) and plain strings,
  * not MiniMessage or Adventure Components with advanced features like click events,
  * hover events, or gradients.
- * <p>
- * Key components:
+ *
+ * <p>Key components:
  * <ul>
  *   <li>{@link de.jexcellence.jextranslate.bedrock.HexColorFallback} - Options for handling hex colors on Bedrock</li>
  *   <li>{@link de.jexcellence.jextranslate.bedrock.BedrockFormatMode} - Compatibility mode selection</li>
