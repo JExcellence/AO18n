@@ -5,12 +5,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.reader.ReaderException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -677,8 +679,20 @@ public final class TranslationLoader {
             }
             
             Map<String, Object> data;
-            try (InputStream inputStream = Files.newInputStream(filePath)) {
-                data = yaml.load(inputStream);
+            String rawContent = Files.readString(filePath, StandardCharsets.UTF_8);
+            String normalizedContent = TranslationContentRepair.stripUtf8Bom(rawContent);
+
+            try {
+                data = yaml.load(normalizedContent);
+            } catch (ReaderException readerException) {
+                Optional<String> repairedContent = TranslationContentRepair.repairCorruptedUtf8Content(normalizedContent);
+                if (repairedContent.isEmpty()) {
+                    throw readerException;
+                }
+
+                data = yaml.load(repairedContent.get());
+                Files.writeString(filePath, repairedContent.get(), StandardCharsets.UTF_8);
+                LOGGER.warning("Recovered corrupted UTF-8 translation file and rewrote it as valid UTF-8: " + fileName);
             }
 
             if (data == null) {
