@@ -3,7 +3,10 @@ package de.jexcellence.jextranslate.validation;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Comprehensive validation report for translation key analysis.

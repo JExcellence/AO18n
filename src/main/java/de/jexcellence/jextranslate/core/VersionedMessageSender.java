@@ -2,8 +2,6 @@ package de.jexcellence.jextranslate.core;
 
 import de.jexcellence.jextranslate.bedrock.BedrockConverter;
 import de.jexcellence.jextranslate.bedrock.BedrockDetectionCache;
-import de.jexcellence.jextranslate.bedrock.BedrockFormatMode;
-import de.jexcellence.jextranslate.bedrock.HexColorFallback;
 import de.jexcellence.jextranslate.config.R18nConfiguration;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
