@@ -93,8 +93,6 @@ public final class VersionDetector {
         this.minecraftVersion = detectMinecraftVersion();
         this.serverVersion = detectServerVersion();
         this.isModern = detectModernVersion();
-
-        logDetectionResults();
     }
 
 
@@ -200,19 +198,6 @@ public final class VersionDetector {
             LOGGER.warning("Failed to parse server version for modernity check: " + e.getMessage());
         }
         return true; // Assume modern for safety
-    }
-
-    /**
-     * Logs the detection results.
-     */
-    private void logDetectionResults() {
-        LOGGER.info("=== Server Environment Detection ===");
-        LOGGER.info("Server Type: " + serverType.getDisplayName());
-        LOGGER.info("Minecraft Version: " + minecraftVersion);
-        LOGGER.info("Server Version: " + serverVersion);
-        LOGGER.info("Modern (1.13+): " + isModern);
-        LOGGER.info("Native Adventure: " + hasNativeAdventure());
-        LOGGER.info("===================================");
     }
 
     /**

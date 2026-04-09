@@ -450,8 +450,6 @@ public final class R18nManager {
             audiences = BukkitAudiences.create(plugin);
             logger.info("Adventure platform initialized for " + versionDetector.getServerType());
         } catch (NoClassDefFoundError | Exception e) {
-            // Gracefully handle missing BukkitAudiences - fall back to legacy mode
-            logger.info("Adventure platform not available, using legacy mode: " + e.getMessage());
             audiences = null;
         }
     }
