@@ -59,7 +59,7 @@ import java.util.logging.Logger;
  * }</pre>
  *
  * @author JExcellence
- * @version 2.0.0
+ * @version 3.0.0
  * @since 2.0.0
  */
 public final class R18nManager {
@@ -128,13 +128,13 @@ public final class R18nManager {
     public CompletableFuture<Void> initialize() {
         return CompletableFuture.runAsync(() -> {
             try {
-                logger.info("Initializing R18n v2.0.0...");
+                logger.info("Initializing R18n v3.0.0...");
 
                 // Initialize Adventure platform
                 initializeAdventure();
 
                 // Initialize versioned message sender
-                messageSender = new VersionedMessageSender(versionDetector, audiences);
+                messageSender = new VersionedMessageSender(versionDetector, audiences, logger);
 
                 // Initialize Bedrock detection cache if enabled
                 if (configuration.bedrockSupportEnabled()) {
@@ -199,6 +199,19 @@ public final class R18nManager {
             throw new IllegalStateException("R18n is not initialized. Call initialize() first.");
         }
         return new MessageBuilder(this, key);
+    }
+
+    /**
+     * Concise alias for {@link #message(String)}.
+     *
+     * <pre>{@code r18n.msg("welcome").with("player", name).send(player);}</pre>
+     *
+     * @param key the translation key
+     * @return a new message builder
+     */
+    @NotNull
+    public MessageBuilder msg(@NotNull String key) {
+        return message(key);
     }
 
     /**

@@ -25,14 +25,14 @@ import java.util.logging.Logger;
  * </ul>
  *
  * @author JExcellence
- * @version 2.0.0
+ * @version 3.0.0
  * @since 2.0.0
  */
 public final class VersionedMessageSender {
 
-    private static final Logger LOGGER = Logger.getLogger(VersionedMessageSender.class.getName());
     private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 
+    private final Logger logger;
     private final VersionDetector versionDetector;
     private final BukkitAudiences audiences;
     private BedrockDetectionCache bedrockDetectionCache;
@@ -43,10 +43,13 @@ public final class VersionedMessageSender {
      *
      * @param versionDetector the version detector
      * @param audiences       the Adventure audiences instance (null for legacy versions)
+     * @param logger          the plugin logger
      */
-    public VersionedMessageSender(@NotNull VersionDetector versionDetector, @Nullable BukkitAudiences audiences) {
+    public VersionedMessageSender(@NotNull VersionDetector versionDetector, @Nullable BukkitAudiences audiences,
+                                   @NotNull Logger logger) {
         this.versionDetector = versionDetector;
         this.audiences = audiences;
+        this.logger = logger;
     }
 
     /**
@@ -124,7 +127,7 @@ public final class VersionedMessageSender {
         if (supportsComponents() && audiences != null) {
             audience.sendMessage(component);
         } else {
-            LOGGER.warning("Attempted to send to Adventure audience on unsupported version");
+            logger.warning("Attempted to send to Adventure audience on unsupported version");
         }
     }
 

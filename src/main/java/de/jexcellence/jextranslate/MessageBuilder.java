@@ -84,6 +84,20 @@ public final class MessageBuilder {
     }
 
     /**
+     * Concise alias for {@link #placeholder(String, Object)}.
+     *
+     * <pre>{@code r18n.msg("welcome").with("player", name).send(player);}</pre>
+     *
+     * @param key   the placeholder key (without braces)
+     * @param value the placeholder value
+     * @return this builder for chaining
+     */
+    @NotNull
+    public MessageBuilder with(@NotNull String key, @Nullable Object value) {
+        return placeholder(key, value);
+    }
+
+    /**
      * Adds multiple placeholders to the message.
      *
      * @param placeholders the placeholders map
@@ -133,6 +147,16 @@ public final class MessageBuilder {
     public MessageBuilder withPrefix() {
         this.includePrefix = true;
         return this;
+    }
+
+    /**
+     * Concise alias for {@link #withPrefix()}.
+     *
+     * @return this builder for chaining
+     */
+    @NotNull
+    public MessageBuilder prefix() {
+        return withPrefix();
     }
 
     /**
@@ -198,12 +222,44 @@ public final class MessageBuilder {
     }
 
     /**
-     * Sends the message to console.
+     * Sends the message to the server console using the default locale.
      */
     public void console() {
         Component component = toComponent(null);
         if (manager.getMessageSender() != null) {
             manager.getMessageSender().console(component);
+        }
+    }
+
+    /**
+     * Sends the message to the server console using a specific locale.
+     *
+     * <pre>{@code r18n.msg("startup.ready").console("de_DE");}</pre>
+     *
+     * @param locale the locale to use for the console message
+     */
+    public void console(@NotNull String locale) {
+        locale(locale);
+        console();
+    }
+
+    /**
+     * Sends the message to a Bedrock player, explicitly forcing Bedrock-compatible formatting
+     * regardless of automatic detection. Strips unsupported features (click/hover events)
+     * and converts hex colours according to the configured fallback strategy.
+     *
+     * @param player the Bedrock target player
+     */
+    public void sendBedrock(@NotNull Player player) {
+        Component component = toComponent(player);
+        Component stripped = BedrockConverter.stripUnsupportedFormatting(component);
+        if (manager.getMessageSender() != null) {
+            if (manager.getMessageSender().hasAudiences()) {
+                manager.getAudiences().player(player).sendMessage(stripped);
+            } else {
+                String legacy = manager.getMessageSender().toLegacyString(stripped);
+                player.sendMessage(legacy);
+            }
         }
     }
 
@@ -268,6 +324,63 @@ public final class MessageBuilder {
     public boolean exists(@Nullable Player player) {
         String locale = determineLocale(player);
         return manager.getTranslationLoader().hasKey(key, locale);
+    }
+
+    // ── Concise aliases ──────────────────────────────────────────────────────
+
+    /**
+     * Concise alias for {@link #toComponent(Player)}.
+     *
+     * @param player the target player (null for default locale)
+     * @return the formatted component
+     */
+    @NotNull
+    public Component component(@Nullable Player player) {
+        return toComponent(player);
+    }
+
+    /**
+     * Concise alias for {@link #toComponents(Player)}.
+     *
+     * @param player the target player (null for default locale)
+     * @return the list of formatted components
+     */
+    @NotNull
+    public List<Component> components(@Nullable Player player) {
+        return toComponents(player);
+    }
+
+    /**
+     * Concise alias for {@link #toString(Player)}. Avoids confusion with {@link Object#toString()}.
+     *
+     * @param player the target player (null for default locale)
+     * @return the formatted string
+     */
+    @NotNull
+    public String text(@Nullable Player player) {
+        return toString(player);
+    }
+
+    /**
+     * Concise alias for {@link #toStrings(Player)}.
+     *
+     * @param player the target player (null for default locale)
+     * @return the list of formatted strings
+     */
+    @NotNull
+    public List<String> texts(@Nullable Player player) {
+        return toStrings(player);
+    }
+
+    /**
+     * Concise alias for {@link #toPlainString(Player)}.
+     *
+     * @param player the target player (null for default locale)
+     * @return the plain text string with all formatting removed
+     */
+    @NotNull
+    public String plain(@Nullable Player player) {
+        return toPlainString(player);
     }
 
     /**
@@ -414,16 +527,14 @@ public final class MessageBuilder {
      */
     @NotNull
     private String normalizeLocale(@NotNull String locale) {
-        if (locale == null || locale.isEmpty()) {
+        if (locale.isEmpty()) {
             return locale;
         }
         String[] parts = locale.split("[_-]");
-        if (parts.length == 1) {
-            return parts[0].toLowerCase();
-        } else if (parts.length >= 2) {
+        if (parts.length >= 2) {
             return parts[0].toLowerCase() + "_" + parts[1].toUpperCase();
         }
-        return locale;
+        return parts[0].toLowerCase();
     }
 
     /**

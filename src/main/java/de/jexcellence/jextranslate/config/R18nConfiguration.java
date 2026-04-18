@@ -56,7 +56,7 @@ import java.util.Set;
  * @param hexColorFallback      how hex colors are handled for Bedrock players
  * @param bedrockFormatMode     formatting mode for Bedrock players
  * @author JExcellence
- * @version 2.0.0
+ * @version 3.0.0
  * @since 2.0.0
  */
 public record R18nConfiguration(
@@ -176,496 +176,46 @@ public record R18nConfiguration(
         );
     }
 
-    /**
-     * Creates a new configuration with the specified default locale.
-     *
-     * @param defaultLocale the new default locale
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withDefaultLocale(@NotNull String defaultLocale) {
-        Set<String> newSupportedLocales = new HashSet<>(supportedLocales);
-        newSupportedLocales.add(defaultLocale);
-        return new R18nConfiguration(
-                defaultLocale,
-                newSupportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
+    // ── Immutable "with" modifiers ─────────────────────────────────────────────
+    // Each method returns a new instance with one field changed, delegating to the Builder
+    // to avoid repeating all 16 constructor parameters.
 
-    /**
-     * Creates a new configuration with auto-detection of locales from translation files.
-     * All translation files found in the translation directory will be loaded.
-     *
-     * @return a new configuration instance with auto-detection enabled
-     */
-    @NotNull
-    public R18nConfiguration withAutoDetectLocales() {
-        return new R18nConfiguration(
-                defaultLocale,
-                Set.of(), // Empty set enables auto-detection
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with the specified supported locales.
-     *
-     * @param locales the supported locales
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withSupportedLocales(@NotNull String... locales) {
-        return withSupportedLocales(Set.of(locales));
-    }
-
-    /**
-     * Creates a new configuration with the specified supported locales.
-     *
-     * @param supportedLocales the supported locales
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withSupportedLocales(@NotNull Set<String> supportedLocales) {
-        Set<String> newSupportedLocales = new HashSet<>(supportedLocales);
-        newSupportedLocales.add(defaultLocale);
-        return new R18nConfiguration(
-                defaultLocale,
-                newSupportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with the specified translation directory.
-     *
-     * @param translationDirectory the translation directory name
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withTranslationDirectory(@NotNull String translationDirectory) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with key validation enabled/disabled.
-     *
-     * @param enabled whether key validation is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withKeyValidationEnabled(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                enabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with PlaceholderAPI integration enabled/disabled.
-     *
-     * @param enabled whether PlaceholderAPI integration is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withPlaceholderAPIEnabled(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                enabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with legacy color support enabled/disabled.
-     *
-     * @param enabled whether legacy color support is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withLegacyColorSupport(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                enabled,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with debug mode enabled/disabled.
-     *
-     * @param enabled whether debug mode is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withDebugMode(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                enabled,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with caching enabled/disabled.
-     *
-     * @param enabled whether caching is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withCacheEnabled(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                enabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with the specified cache max size.
-     *
-     * @param maxSize the maximum cache size
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withCacheMaxSize(int maxSize) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                maxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with the specified cache expiration time.
-     *
-     * @param minutes the cache expiration time in minutes
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withCacheExpireMinutes(int minutes) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                minutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with file watching enabled/disabled.
-     *
-     * @param enabled whether file watching is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withWatchFiles(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                enabled,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with metrics collection enabled/disabled.
-     *
-     * @param enabled whether metrics collection is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withMetricsEnabled(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                enabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with the specified missing key handler.
-     *
-     * @param handler the missing key handler
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withMissingKeyHandler(@NotNull MissingKeyHandler handler) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                handler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with Bedrock support enabled/disabled.
-     *
-     * @param enabled whether Bedrock support is enabled
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withBedrockSupportEnabled(boolean enabled) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                enabled,
-                hexColorFallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with the specified hex color fallback strategy.
-     *
-     * @param fallback the hex color fallback strategy for Bedrock players
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withHexColorFallback(@NotNull HexColorFallback fallback) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                fallback,
-                bedrockFormatMode
-        );
-    }
-
-    /**
-     * Creates a new configuration with the specified Bedrock format mode.
-     *
-     * @param mode the Bedrock format mode
-     * @return a new configuration instance
-     */
-    @NotNull
-    public R18nConfiguration withBedrockFormatMode(@NotNull BedrockFormatMode mode) {
-        return new R18nConfiguration(
-                defaultLocale,
-                supportedLocales,
-                translationDirectory,
-                keyValidationEnabled,
-                placeholderAPIEnabled,
-                legacyColorSupport,
-                debugMode,
-                cacheEnabled,
-                cacheMaxSize,
-                cacheExpireMinutes,
-                watchFiles,
-                metricsEnabled,
-                missingKeyHandler,
-                bedrockSupportEnabled,
-                hexColorFallback,
-                mode
-        );
-    }
+    /** Returns a copy with the given default locale (also adds it to supported locales). */
+    @NotNull public R18nConfiguration withDefaultLocale(@NotNull String defaultLocale)            { return toBuilder().defaultLocale(defaultLocale).build(); }
+    /** Returns a copy with auto-detection of locales (loads every file found). */
+    @NotNull public R18nConfiguration withAutoDetectLocales()                                     { return toBuilder().autoDetectLocales().build(); }
+    /** Returns a copy with the given supported locales. */
+    @NotNull public R18nConfiguration withSupportedLocales(@NotNull String... locales)            { return toBuilder().supportedLocales(locales).build(); }
+    /** Returns a copy with the given supported locales. */
+    @NotNull public R18nConfiguration withSupportedLocales(@NotNull Set<String> supportedLocales) { return toBuilder().supportedLocales(supportedLocales).build(); }
+    /** Returns a copy with the given translation directory. */
+    @NotNull public R18nConfiguration withTranslationDirectory(@NotNull String dir)               { return toBuilder().translationDirectory(dir).build(); }
+    /** Returns a copy with key validation enabled/disabled. */
+    @NotNull public R18nConfiguration withKeyValidationEnabled(boolean enabled)                   { return toBuilder().keyValidationEnabled(enabled).build(); }
+    /** Returns a copy with PlaceholderAPI integration enabled/disabled. */
+    @NotNull public R18nConfiguration withPlaceholderAPIEnabled(boolean enabled)                  { return toBuilder().placeholderAPIEnabled(enabled).build(); }
+    /** Returns a copy with legacy colour support enabled/disabled. */
+    @NotNull public R18nConfiguration withLegacyColorSupport(boolean enabled)                     { return toBuilder().legacyColorSupport(enabled).build(); }
+    /** Returns a copy with debug mode enabled/disabled. */
+    @NotNull public R18nConfiguration withDebugMode(boolean enabled)                              { return toBuilder().debugMode(enabled).build(); }
+    /** Returns a copy with caching enabled/disabled. */
+    @NotNull public R18nConfiguration withCacheEnabled(boolean enabled)                           { return toBuilder().enableCache(enabled).build(); }
+    /** Returns a copy with the given cache max size. */
+    @NotNull public R18nConfiguration withCacheMaxSize(int maxSize)                               { return toBuilder().cacheMaxSize(maxSize).build(); }
+    /** Returns a copy with the given cache expiration (minutes). */
+    @NotNull public R18nConfiguration withCacheExpireMinutes(int minutes)                         { return toBuilder().cacheExpireMinutes(minutes).build(); }
+    /** Returns a copy with file watching enabled/disabled. */
+    @NotNull public R18nConfiguration withWatchFiles(boolean enabled)                             { return toBuilder().enableFileWatcher(enabled).build(); }
+    /** Returns a copy with metrics collection enabled/disabled. */
+    @NotNull public R18nConfiguration withMetricsEnabled(boolean enabled)                         { return toBuilder().enableMetrics(enabled).build(); }
+    /** Returns a copy with the given missing key handler. */
+    @NotNull public R18nConfiguration withMissingKeyHandler(@NotNull MissingKeyHandler handler)   { return toBuilder().onMissingKey(handler).build(); }
+    /** Returns a copy with Bedrock support enabled/disabled. */
+    @NotNull public R18nConfiguration withBedrockSupportEnabled(boolean enabled)                  { return toBuilder().bedrockSupportEnabled(enabled).build(); }
+    /** Returns a copy with the given hex colour fallback strategy. */
+    @NotNull public R18nConfiguration withHexColorFallback(@NotNull HexColorFallback fallback)    { return toBuilder().hexColorFallback(fallback).build(); }
+    /** Returns a copy with the given Bedrock format mode. */
+    @NotNull public R18nConfiguration withBedrockFormatMode(@NotNull BedrockFormatMode mode)      { return toBuilder().bedrockFormatMode(mode).build(); }
 
     /**
      * Checks if a locale is supported.
@@ -782,6 +332,18 @@ public record R18nConfiguration(
         public Builder defaultLocale(@NotNull String defaultLocale) {
             this.defaultLocale = defaultLocale;
             this.supportedLocales.add(defaultLocale);
+            return this;
+        }
+
+        /**
+         * Enables auto-detection of locales from translation files.
+         * All files in the translation directory will be loaded regardless of locale code.
+         *
+         * @return this builder
+         */
+        @NotNull
+        public Builder autoDetectLocales() {
+            this.supportedLocales = new HashSet<>();
             return this;
         }
 

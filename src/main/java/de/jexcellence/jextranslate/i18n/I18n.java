@@ -13,25 +13,27 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Main entry point for internationalization (i18n) message handling in the R18n system.
+ * Legacy entry point for internationalization (i18n) message handling.
  *
- * <p>This class provides a unified API to send and display localized messages to players,
- * supporting placeholders and optional prefixes. It delegates version-specific logic
- * to the appropriate {@link II18nVersionWrapper} implementation.</p>
+ * <p><strong>Deprecated:</strong> Use {@link de.jexcellence.jextranslate.MessageBuilder} via
+ * {@code r18n.msg("key")} instead. The {@code MessageBuilder} API is more concise, supports
+ * locale overrides, plural forms, Bedrock sending, and does not require a separate {@code .build()} step.</p>
  *
- * <p>Usage is via the {@link Builder} pattern:</p>
+ * <p>Migration example:</p>
  * <pre>{@code
- * I18n i18n = new I18n.Builder("message.key", player)
- *     .withPlaceholder("name", "Steve")
- *     .includePrefix()
- *     .build();
- * i18n.sendMessage();
+ * // Before (I18n)
+ * new I18n.Builder("welcome", player).withPlaceholder("name", "Steve").build().sendMessage();
+ *
+ * // After (MessageBuilder)
+ * r18n.msg("welcome").with("name", "Steve").send(player);
  * }</pre>
  *
  * @author JExcellence
- * @version 2.0.1
+ * @version 3.0.0
  * @since 2.0.0
+ * @deprecated since 3.0.0 — use {@link de.jexcellence.jextranslate.MessageBuilder} instead
  */
+@Deprecated(since = "3.0.0")
 public class I18n {
 
     /**
@@ -78,9 +80,14 @@ public class I18n {
     /**
      * Returns the formatted localized message for display.
      *
+     * <p><strong>Note:</strong> This method uses an unchecked cast. The caller is responsible for
+     * ensuring the assigned type matches the wrapper's actual output type (e.g., {@code Component}
+     * on modern servers, {@code String} on legacy ones).</p>
+     *
      * @param <T> the type of the message (e.g., String, Component)
      * @return the formatted message
      */
+    @SuppressWarnings("unchecked")
     public <T> T component() {
         return (T) this.i18nVersionWrapper.displayMessage();
     }
@@ -88,9 +95,13 @@ public class I18n {
     /**
      * Returns a list of formatted localized messages for display.
      *
+     * <p><strong>Note:</strong> This method uses an unchecked cast. The caller is responsible for
+     * ensuring the assigned type matches the wrapper's actual output type.</p>
+     *
      * @param <T> the type of the messages (e.g., String, Component)
      * @return the list of formatted messages
      */
+    @SuppressWarnings("unchecked")
     public <T> List<T> children() {
         return (List<T>) this.i18nVersionWrapper.displayMessages();
     }
@@ -105,8 +116,11 @@ public class I18n {
     }
 
     /**
-     * Builder for constructing {@link I18n} instances with a fluent API.
+     * Builder for constructing {@link I18n} instances.
+     *
+     * @deprecated since 3.0.0 — use {@link de.jexcellence.jextranslate.MessageBuilder} instead
      */
+    @Deprecated(since = "3.0.0")
     public static class Builder {
 
         /**
@@ -115,8 +129,9 @@ public class I18n {
         private final Map<String, String> placeholders = new HashMap<>();
 
         /**
-         * The player to whom the message will be sent.
+         * The player to whom the message will be sent, or {@code null} for the console sender.
          */
+        @Nullable
         private final Player player;
 
         /**
@@ -143,6 +158,7 @@ public class I18n {
 
         /**
          * Creates a new Builder for sending the message to the console sender (no player context).
+         * The player field will be {@code null}; the message is routed to the console wrapper.
          *
          * @param key the message key
          * @throws NullPointerException if key is null

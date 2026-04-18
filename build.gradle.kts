@@ -1,6 +1,5 @@
 plugins {
     id("raindrop.library-conventions")
-    id("raindrop.dependencies-yml")
 }
 
 group = "de.jexcellence.translate"
@@ -20,7 +19,7 @@ dependencies {
     compileOnly(libs.adventure.serializer.legacy)
     compileOnly(libs.adventure.serializer.plain)
     compileOnly(libs.adventure.platform.bukkit)
-    compileOnly("org.yaml:snakeyaml:2.2")
+    compileOnly("org.yaml:snakeyaml:2.4")
 
     compileOnly(libs.caffeine)
     compileOnly(libs.jackson.core)

@@ -38,12 +38,12 @@ import java.util.stream.Stream;
  * and provides detailed feedback about missing translations.</p>
  *
  * @author JExcellence
- * @version 2.0.0
+ * @version 3.0.0
  * @since 2.0.0
  */
 public final class TranslationLoader {
 
-    private static final Logger LOGGER = Logger.getLogger(TranslationLoader.class.getName());
+    private final Logger logger;
 
     private final JavaPlugin plugin;
     private final R18nConfiguration configuration;
@@ -66,6 +66,7 @@ public final class TranslationLoader {
     public TranslationLoader(@NotNull JavaPlugin plugin, @NotNull R18nConfiguration configuration) {
         this.plugin = plugin;
         this.configuration = configuration;
+        this.logger = plugin.getLogger();
         this.yaml = new Yaml();
         this.jsonMapper = new ObjectMapper();
     }
@@ -108,11 +109,11 @@ public final class TranslationLoader {
                 boolean quietMode = !configuration.debugMode();
                 
                 if (quietMode) {
-                    LOGGER.fine("Loading translations for plugin: " + plugin.getName());
+                    logger.fine("Loading translations for plugin: " + plugin.getName());
                 } else {
-                    LOGGER.info("Loading translations for plugin: " + plugin.getName());
-                    LOGGER.info("Plugin class: " + plugin.getClass().getName());
-                    LOGGER.info("Plugin data folder: " + plugin.getDataFolder().getAbsolutePath());
+                    logger.info("Loading translations for plugin: " + plugin.getName());
+                    logger.info("Plugin class: " + plugin.getClass().getName());
+                    logger.info("Plugin data folder: " + plugin.getDataFolder().getAbsolutePath());
                 }
                 
                 translations.clear();
@@ -120,25 +121,25 @@ public final class TranslationLoader {
 
                 File translationDir = getTranslationDirectory();
                 if (!quietMode) {
-                    LOGGER.info("Translation directory: " + translationDir.getAbsolutePath());
+                    logger.info("Translation directory: " + translationDir.getAbsolutePath());
                 }
                 
                 // Ensure plugin data folder exists first
                 if (!plugin.getDataFolder().exists()) {
                     boolean created = plugin.getDataFolder().mkdirs();
                     if (!quietMode) {
-                        LOGGER.info("Created plugin data folder: " + created);
+                        logger.info("Created plugin data folder: " + created);
                     }
                 }
                 
                 ensureDirectoryExists(translationDir);
                 if (!quietMode) {
-                    LOGGER.info("Translation directory exists: " + translationDir.exists());
+                    logger.info("Translation directory exists: " + translationDir.exists());
                     
                     // Check if we can find any resources
                     String testResource = configuration.translationDirectory() + "/en_US.yml";
                     InputStream testStream = plugin.getResource(testResource);
-                    LOGGER.info("Test resource '" + testResource + "' exists: " + (testStream != null));
+                    logger.info("Test resource '" + testResource + "' exists: " + (testStream != null));
                     if (testStream != null) {
                         try { testStream.close(); } catch (Exception ignored) {}
                     }
@@ -150,12 +151,12 @@ public final class TranslationLoader {
                 if (!quietMode) {
                     File[] files = translationDir.listFiles();
                     if (files != null) {
-                        LOGGER.info("Files in translation directory: " + files.length);
+                        logger.info("Files in translation directory: " + files.length);
                         for (File file : files) {
-                            LOGGER.info("  - " + file.getName() + " (" + file.length() + " bytes)");
+                            logger.info("  - " + file.getName() + " (" + file.length() + " bytes)");
                         }
                     } else {
-                        LOGGER.warning("Translation directory is empty or not accessible");
+                        logger.warning("Translation directory is empty or not accessible");
                     }
                 }
                 
@@ -163,16 +164,16 @@ public final class TranslationLoader {
                 addProgrammaticTranslations();
 
                 // Always log summary (but make it concise in quiet mode)
-                LOGGER.info(String.format("Successfully loaded %d locales with %d total translation keys",
+                logger.info(String.format("Successfully loaded %d locales with %d total translation keys",
                         loadedLocales.size(), getTotalKeyCount()));
                 
                 // Only log full locale list in debug mode
                 if (!quietMode) {
-                    LOGGER.info("Loaded locales: " + String.join(", ", loadedLocales));
+                    logger.info("Loaded locales: " + String.join(", ", loadedLocales));
                 }
                 
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Failed to load translations", e);
+                logger.log(Level.SEVERE, "Failed to load translations", e);
                 throw new RuntimeException("Translation loading failed", e);
             }
         });
@@ -298,7 +299,7 @@ public final class TranslationLoader {
     public int cleanupUnsupportedFiles() {
         Set<String> supportedLocales = configuration.supportedLocales();
         if (supportedLocales.isEmpty()) {
-            LOGGER.info("No supported locales configured - no cleanup needed");
+            logger.info("No supported locales configured - no cleanup needed");
             return 0;
         }
         
@@ -321,20 +322,20 @@ public final class TranslationLoader {
                 if (!supportedLocales.contains(locale)) {
                     try {
                         if (file.delete()) {
-                            LOGGER.info("Deleted unsupported locale file: " + file.getName());
+                            logger.info("Deleted unsupported locale file: " + file.getName());
                             deletedCount++;
                         }
                     } catch (Exception e) {
-                        LOGGER.warning("Failed to delete unsupported locale file " + file.getName() + ": " + e.getMessage());
+                        logger.warning("Failed to delete unsupported locale file " + file.getName() + ": " + e.getMessage());
                     }
                 }
             }
         }
         
         if (deletedCount > 0) {
-            LOGGER.info("Manually cleaned up " + deletedCount + " unsupported locale files");
+            logger.info("Manually cleaned up " + deletedCount + " unsupported locale files");
         } else {
-            LOGGER.info("No unsupported locale files found to clean up");
+            logger.info("No unsupported locale files found to clean up");
         }
         
         return deletedCount;
@@ -352,14 +353,13 @@ public final class TranslationLoader {
     }
 
     /**
-     * Cleans up translation files for unsupported locales if filtering is enabled.
+     * Cleans up translation files for unsupported locales if a supported-locale filter is configured.
      * This removes files that were extracted in previous runs with different configurations.
-     * Only runs in debug mode to avoid accidentally deleting user-customized files.
      */
     private void cleanupUnsupportedLocaleFiles(@NotNull File translationDir) {
         Set<String> supportedLocales = configuration.supportedLocales();
-        if (supportedLocales.isEmpty() || !configuration.debugMode()) {
-            return; // No filtering enabled or not in debug mode
+        if (supportedLocales.isEmpty()) {
+            return; // Auto-detect mode — keep all files
         }
         
         File[] existingFiles = translationDir.listFiles();
@@ -376,99 +376,25 @@ public final class TranslationLoader {
                 if (!supportedLocales.contains(locale)) {
                     try {
                         if (file.delete()) {
-                            LOGGER.info("Deleted unsupported locale file: " + file.getName());
+                            logger.info("Deleted unsupported locale file: " + file.getName());
                             deletedCount++;
                         }
                     } catch (Exception e) {
-                        LOGGER.warning("Failed to delete unsupported locale file " + file.getName() + ": " + e.getMessage());
+                        logger.warning("Failed to delete unsupported locale file " + file.getName() + ": " + e.getMessage());
                     }
                 }
             }
         }
         
         if (deletedCount > 0) {
-            LOGGER.info("Cleaned up " + deletedCount + " unsupported locale files (debug mode)");
+            logger.info("Cleaned up " + deletedCount + " unsupported locale files (debug mode)");
         }
     }
 
     private void extractResourceFiles(@NotNull File translationDir) {
         String translationPath = configuration.translationDirectory();
-        
-        // Clean up unsupported locale files if filtering is enabled
         cleanupUnsupportedLocaleFiles(translationDir);
-        
-        // First try: Use Bukkit's saveResource for common locale files (most reliable)
-        extractUsingBukkitSaveResource(translationDir, translationPath);
-        
-        // Second try: Scan JAR file directly for any additional files
         extractUsingJarScanning(translationDir, translationPath);
-    }
-    
-    /**
-     * Extracts translation files using Bukkit's saveResource method.
-     * This is the most reliable method as it uses Bukkit's built-in resource handling.
-     * Only extracts files for locales in supportedLocales (if configured).
-     */
-    private void extractUsingBukkitSaveResource(@NotNull File translationDir, @NotNull String translationPath) {
-        // Common locale files to extract
-        String[] commonLocales = {
-            "en_US", "en_GB", "de_DE", "es_ES", "fr_FR", "ja_JP",
-            "ko_KR", "zh_CN", "zh_TW", "pt_BR", "ru_RU", "it_IT",
-            "nl_NL", "pl_PL", "tr_TR", "sv_SE", "no_NO", "da_DK",
-            "en", "de"
-        };
-        
-        Set<String> supportedLocales = configuration.supportedLocales();
-        boolean filterEnabled = !supportedLocales.isEmpty();
-        boolean quietMode = !configuration.debugMode();
-        
-        if (!quietMode) {
-            if (filterEnabled) {
-                LOGGER.info("Extracting translation files only for supported locales: " + String.join(", ", supportedLocales));
-            } else {
-                LOGGER.info("No locale filtering configured - extracting all available translation files");
-            }
-        }
-        
-        int extractedCount = 0;
-        int skippedCount = 0;
-        for (String locale : commonLocales) {
-            // Skip if filtering is enabled and locale not in supported list
-            if (filterEnabled && !supportedLocales.contains(locale)) {
-                LOGGER.fine("Skipping extraction of unsupported locale: " + locale);
-                skippedCount++;
-                continue;
-            }
-            
-            String resourcePath = translationPath + "/" + locale + ".yml";
-            File targetFile = new File(translationDir, locale + ".yml");
-            
-            // Only extract if file doesn't exist
-            if (!targetFile.exists()) {
-                try {
-                    // Check if resource exists before trying to save
-                    InputStream resourceStream = plugin.getResource(resourcePath);
-                    if (resourceStream != null) {
-                        // Copy the resource directly to the target file
-                        Files.copy(resourceStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        resourceStream.close();
-                        LOGGER.fine("Extracted translation file via Bukkit: " + locale + ".yml");
-                        extractedCount++;
-                    }
-                } catch (Exception e) {
-                    LOGGER.fine("Could not extract " + locale + ".yml via Bukkit: " + e.getMessage());
-                }
-            } else {
-                LOGGER.fine("Translation file already exists: " + locale + ".yml");
-            }
-        }
-        
-        if (extractedCount > 0 && !quietMode) {
-            LOGGER.info("Extracted " + extractedCount + " translation files via Bukkit saveResource");
-        }
-        if (skippedCount > 0) {
-            LOGGER.fine("Skipped " + skippedCount + " unsupported locales during extraction");
-        }
     }
     
     /**
@@ -481,13 +407,13 @@ public final class TranslationLoader {
             // Try multiple methods to get the JAR file
             File jarFile = findPluginJarFile();
             if (jarFile == null) {
-                LOGGER.fine("Could not locate plugin JAR file for scanning");
+                logger.fine("Could not locate plugin JAR file for scanning");
                 return;
             }
             
             boolean quietMode = !configuration.debugMode();
             if (!quietMode) {
-                LOGGER.info("Scanning JAR for additional translation files: " + jarFile.getName());
+                logger.info("Scanning JAR for additional translation files: " + jarFile.getName());
             }
             
             Set<String> supportedLocales = configuration.supportedLocales();
@@ -495,9 +421,9 @@ public final class TranslationLoader {
             
             if (!quietMode) {
                 if (filterEnabled) {
-                    LOGGER.info("JAR scanning will filter for supported locales: " + String.join(", ", supportedLocales));
+                    logger.info("JAR scanning will filter for supported locales: " + String.join(", ", supportedLocales));
                 } else {
-                    LOGGER.info("JAR scanning with no locale filtering");
+                    logger.info("JAR scanning with no locale filtering");
                 }
             }
             
@@ -520,7 +446,7 @@ public final class TranslationLoader {
                         
                         // Skip if filtering is enabled and locale not in supported list
                         if (filterEnabled && !supportedLocales.contains(locale)) {
-                            LOGGER.fine("Skipping JAR extraction of unsupported locale: " + locale);
+                            logger.fine("Skipping JAR extraction of unsupported locale: " + locale);
                             skippedCount++;
                             continue;
                         }
@@ -531,7 +457,7 @@ public final class TranslationLoader {
                             try (InputStream in = jar.getInputStream(entry)) {
                                 if (in != null) {
                                     Files.copy(in, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                                    LOGGER.fine("Extracted translation file via JAR scan: " + fileName);
+                                    logger.fine("Extracted translation file via JAR scan: " + fileName);
                                     extractedCount++;
                                 }
                             }
@@ -540,14 +466,14 @@ public final class TranslationLoader {
                 }
                 
                 if (extractedCount > 0 && !quietMode) {
-                    LOGGER.info("Extracted " + extractedCount + " additional translation files from JAR");
+                    logger.info("Extracted " + extractedCount + " additional translation files from JAR");
                 }
                 if (skippedCount > 0) {
-                    LOGGER.fine("Skipped " + skippedCount + " unsupported locales during JAR extraction");
+                    logger.fine("Skipped " + skippedCount + " unsupported locales during JAR extraction");
                 }
             }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed to scan JAR for translation files: " + e.getMessage(), e);
+            logger.log(Level.WARNING, "Failed to scan JAR for translation files: " + e.getMessage(), e);
         }
     }
     
@@ -566,19 +492,19 @@ public final class TranslationLoader {
                 }
             }
         } catch (Exception e) {
-            LOGGER.fine("Could not get JAR via code source: " + e.getMessage());
+            logger.fine("Could not get JAR via code source: " + e.getMessage());
         }
         
-        // Method 2: Try via plugin file (Bukkit provides this)
+        // Method 2: Try via JavaPlugin.getFile() (protected method — must use getDeclaredMethod)
         try {
-            var getFileMethod = plugin.getClass().getMethod("getFile");
+            var getFileMethod = JavaPlugin.class.getDeclaredMethod("getFile");
             getFileMethod.setAccessible(true);
             File jarFile = (File) getFileMethod.invoke(plugin);
             if (jarFile != null && jarFile.exists()) {
                 return jarFile;
             }
         } catch (Exception e) {
-            LOGGER.fine("Could not get JAR via getFile(): " + e.getMessage());
+            logger.fine("Could not get JAR via getFile(): " + e.getMessage());
         }
         
         // Method 3: Look in plugins folder
@@ -591,7 +517,7 @@ public final class TranslationLoader {
                 return jarFiles[0];
             }
         } catch (Exception e) {
-            LOGGER.fine("Could not find JAR in plugins folder: " + e.getMessage());
+            logger.fine("Could not find JAR in plugins folder: " + e.getMessage());
         }
         
         return null;
@@ -654,7 +580,7 @@ public final class TranslationLoader {
             case JSON -> loadJsonFile(filePath);
             default -> {
                 if (configuration.debugMode()) {
-                    LOGGER.warning("Unsupported file type: " + filePath.getFileName());
+                    logger.warning("Unsupported file type: " + filePath.getFileName());
                 }
             }
         }
@@ -673,16 +599,16 @@ public final class TranslationLoader {
 
         // Auto-detect locales from files - only skip if explicitly configured and locale not in list
         if (!configuration.supportedLocales().isEmpty() && !configuration.supportedLocales().contains(locale)) {
-            LOGGER.fine("Skipping unsupported locale: " + locale);
+            logger.fine("Skipping unsupported locale: " + locale);
             return;
         }
 
         try {
             boolean quietMode = !configuration.debugMode();
             if (!quietMode) {
-                LOGGER.info("Loading YAML translation file: " + fileName);
+                logger.info("Loading YAML translation file: " + fileName);
             } else {
-                LOGGER.fine("Loading YAML translation file: " + fileName);
+                logger.fine("Loading YAML translation file: " + fileName);
             }
             
             Map<String, Object> data;
@@ -699,11 +625,11 @@ public final class TranslationLoader {
 
                 data = yaml.load(repairedContent.get());
                 Files.writeString(filePath, repairedContent.get(), StandardCharsets.UTF_8);
-                LOGGER.warning("Recovered corrupted UTF-8 translation file and rewrote it as valid UTF-8: " + fileName);
+                logger.warning("Recovered corrupted UTF-8 translation file and rewrote it as valid UTF-8: " + fileName);
             }
 
             if (data == null) {
-                LOGGER.warning("Translation file is empty: " + fileName);
+                logger.warning("Translation file is empty: " + fileName);
                 return;
             }
 
@@ -720,9 +646,9 @@ public final class TranslationLoader {
 
             loadedLocales.add(locale);
             yamlLocales.add(locale);
-            LOGGER.fine(String.format("Loaded %d keys for locale %s from YAML", flattened.size(), locale));
+            logger.fine(String.format("Loaded %d keys for locale %s from YAML", flattened.size(), locale));
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to load YAML translation file: " + fileName, e);
+            logger.log(Level.SEVERE, "Failed to load YAML translation file: " + fileName, e);
         }
     }
     
@@ -738,22 +664,22 @@ public final class TranslationLoader {
 
         // Auto-detect locales from files - only skip if explicitly configured and locale not in list
         if (!configuration.supportedLocales().isEmpty() && !configuration.supportedLocales().contains(locale)) {
-            LOGGER.fine("Skipping unsupported locale: " + locale);
+            logger.fine("Skipping unsupported locale: " + locale);
             return;
         }
         
         // YAML takes precedence - skip JSON if YAML already loaded for this locale
         if (yamlLocales.contains(locale)) {
-            LOGGER.fine("Skipping JSON file for locale " + locale + " (YAML takes precedence)");
+            logger.fine("Skipping JSON file for locale " + locale + " (YAML takes precedence)");
             return;
         }
 
         try {
             boolean quietMode = !configuration.debugMode();
             if (!quietMode) {
-                LOGGER.info("Loading JSON translation file: " + fileName);
+                logger.info("Loading JSON translation file: " + fileName);
             } else {
-                LOGGER.fine("Loading JSON translation file: " + fileName);
+                logger.fine("Loading JSON translation file: " + fileName);
             }
             
             Map<String, Object> data;
@@ -762,7 +688,7 @@ public final class TranslationLoader {
             }
 
             if (data == null || data.isEmpty()) {
-                LOGGER.warning("Translation file is empty: " + fileName);
+                logger.warning("Translation file is empty: " + fileName);
                 return;
             }
 
@@ -778,9 +704,9 @@ public final class TranslationLoader {
             }
 
             loadedLocales.add(locale);
-            LOGGER.fine(String.format("Loaded %d keys for locale %s from JSON", flattened.size(), locale));
+            logger.fine(String.format("Loaded %d keys for locale %s from JSON", flattened.size(), locale));
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed to load JSON translation file: " + fileName, e);
+            logger.log(Level.WARNING, "Failed to load JSON translation file: " + fileName, e);
         }
     }
 
