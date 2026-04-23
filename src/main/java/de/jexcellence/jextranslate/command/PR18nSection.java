@@ -1,6 +1,6 @@
 package de.jexcellence.jextranslate.command;
 
-import de.jexcellence.evaluable.section.ACommandSection;
+import de.jexcellence.evaluable.section.CommandSection;
 import de.jexcellence.gpeee.interpreter.EvaluationEnvironmentBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 2.1.0
  */
 @SuppressWarnings("unused")
-public final class PR18nSection extends ACommandSection {
+public final class PR18nSection extends CommandSection {
 
     private static final String COMMAND_NAME = "pr18n";
 

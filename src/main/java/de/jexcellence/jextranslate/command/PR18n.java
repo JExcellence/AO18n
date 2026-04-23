@@ -2,7 +2,7 @@ package de.jexcellence.jextranslate.command;
 
 import com.raindropcentral.commands.BukkitCommand;
 import com.raindropcentral.commands.utility.Command;
-import de.jexcellence.evaluable.section.ACommandSection;
+import de.jexcellence.evaluable.section.CommandSection;
 import de.jexcellence.jextranslate.R18nManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,7 +40,7 @@ public final class PR18n extends BukkitCommand {
      * @param loadedPlugin host plugin instance
      */
     public PR18n(
-            final @NotNull ACommandSection commandSection,
+            final @NotNull CommandSection commandSection,
             final @NotNull JavaPlugin loadedPlugin
     ) {
         super(commandSection);

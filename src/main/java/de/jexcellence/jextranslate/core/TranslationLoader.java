@@ -738,7 +738,14 @@ public final class TranslationLoader {
             List<?> list = (List<?>) value;
             return list.stream().map(Object::toString).toList();
         }
-        return List.of(value.toString());
+        // YAML `|-` block scalars come in as a single string with
+        // embedded newlines. Minecraft item lore is a List<Component>,
+        // one line per element, so we split here and hand the caller
+        // a proper multi-line shape. Scalars without a newline fall
+        // through to a single-element list, unchanged from before.
+        final String raw = value.toString();
+        if (raw.indexOf('\n') < 0) return List.of(raw);
+        return java.util.Arrays.asList(raw.split("\n", -1));
     }
 
     private void addProgrammaticTranslations() {

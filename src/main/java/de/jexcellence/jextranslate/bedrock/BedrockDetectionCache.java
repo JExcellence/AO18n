@@ -194,37 +194,63 @@ public final class BedrockDetectionCache implements Listener {
 
         geyserServiceLookupAttempted = true;
 
+        // Geyser detection is a nice-to-have — we probe the legacy
+        // RPlatform class and the modern JExPlatform one in order, and
+        // fall through silently on every failure path. Missing Geyser
+        // is the normal case on a Java-only server and shouldn't spam
+        // the log; successful initialisation still prints at FINE.
+        if (tryRPlatformLookup()) return;
+        if (tryJExPlatformLookup()) return;
+        LOGGER.log(Level.FINE, "Geyser service not available on this server; Bedrock detection disabled");
+    }
+
+    /** Legacy RPlatform integration — left in place so older installs still work. */
+    private boolean tryRPlatformLookup() {
         try {
-            // Try to get RPlatform instance
             Class<?> rPlatformClass = Class.forName("com.raindropcentral.rplatform.RPlatform");
             Method getInstanceMethod = rPlatformClass.getMethod("getInstance");
             Object rPlatform = getInstanceMethod.invoke(null);
-
-            if (rPlatform == null) {
-                LOGGER.info("RPlatform not available - Bedrock detection disabled");
-                return;
-            }
-
-            // Get GeyserService from RPlatform
+            if (rPlatform == null) return false;
             Method getGeyserServiceMethod = rPlatformClass.getMethod("getGeyserService");
             geyserService = getGeyserServiceMethod.invoke(rPlatform);
-
-            if (geyserService == null) {
-                LOGGER.info("GeyserService not available - Bedrock detection disabled");
-                return;
-            }
-
-            // Get the isBedrockPlayer method
+            if (geyserService == null) return false;
             isBedrockPlayerMethod = geyserService.getClass().getMethod("isBedrockPlayer", Player.class);
             geyserServiceAvailable = true;
-            LOGGER.info("GeyserService integration initialized for Bedrock detection");
-
-        } catch (ClassNotFoundException e) {
-            LOGGER.info("RPlatform not found - Bedrock detection disabled");
-        } catch (NoSuchMethodException e) {
-            LOGGER.warning("GeyserService API incompatible - Bedrock detection disabled");
+            LOGGER.log(Level.FINE, "Geyser integration (via RPlatform) active for Bedrock detection");
+            return true;
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            return false;
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Error initializing GeyserService integration", e);
+            LOGGER.log(Level.FINE, "RPlatform Geyser probe failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Modern JExPlatform integration — reached for via reflection to avoid a hard compile dep. */
+    private boolean tryJExPlatformLookup() {
+        try {
+            Class<?> platformClass = Class.forName("de.jexcellence.jexplatform.JExPlatform");
+            Method getGeyserMethod = platformClass.getMethod("getGeyserService");
+            // JExPlatform exposes the singleton through a getInstance() hook,
+            // or the active instance held as a static. Try both shapes.
+            Object platform;
+            try {
+                platform = platformClass.getMethod("getInstance").invoke(null);
+            } catch (NoSuchMethodException nsme) {
+                platform = platformClass.getMethod("get").invoke(null);
+            }
+            if (platform == null) return false;
+            geyserService = getGeyserMethod.invoke(platform);
+            if (geyserService == null) return false;
+            isBedrockPlayerMethod = geyserService.getClass().getMethod("isBedrockPlayer", Player.class);
+            geyserServiceAvailable = true;
+            LOGGER.log(Level.FINE, "Geyser integration (via JExPlatform) active for Bedrock detection");
+            return true;
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            return false;
+        } catch (Exception e) {
+            LOGGER.log(Level.FINE, "JExPlatform Geyser probe failed: " + e.getMessage());
+            return false;
         }
     }
 }

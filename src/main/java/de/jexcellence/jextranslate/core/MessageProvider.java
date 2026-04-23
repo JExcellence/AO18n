@@ -342,9 +342,22 @@ public final class MessageProvider {
         return converted;
     }
 
+    /**
+     * Pass-through for placeholder values. The previous blanket
+     * {@code <} → {@code \<} escape was neutering intentional
+     * MiniMessage in trusted placeholder strings (rank name gradients,
+     * describer output, reward summaries) — the result was literal
+     * {@code <gradient:#...>} text rendering in chat instead of the
+     * coloured substitution the caller expected.
+     *
+     * <p>If a plugin genuinely needs to sanitise untrusted placeholder
+     * input (chat-driven values, say), it should call
+     * {@link net.kyori.adventure.text.minimessage.MiniMessage#stripTags}
+     * on the value before handing it to the message builder.
+     */
     @NotNull
     private String escapeMiniMessage(@NotNull String text) {
-        return text.replace("<", "\\<").replace(">", "\\>");
+        return text;
     }
 
     @NotNull
