@@ -1,5 +1,5 @@
 plugins {
-    id("raindrop.library-conventions")
+    id("jexsuite.library-conventions")
 }
 
 group = "de.jexcellence.translate"
