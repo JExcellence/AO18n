@@ -1,0 +1,27 @@
+# Danish (Denmark) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Velkommen tilbage, {player}!</green> <gray>({online} spillere online)</gray>"
+  first-join: "<yellow>Velkommen til serveren, {player}!</yellow> <gray>Dette er din første gang!</gray>"
+  tutorial: "<gradient:gold:yellow>Velkommen til Serveren!</gradient>"
+
+coins:
+  balance: "Du har <gold>{amount}</gold> mønter"
+  info: "Mønter: {coins}"
+
+lang:
+  current: "Dit nuværende sprog er: <yellow>{locale}</yellow>"
+  available: "Tilgængelige sprog: <gray>{locales}</gray>"
+  changed: "Sprog ændret til: <green>{locale}</green>"
+  error: "<red>Kunne ikke ændre sprog. Sproglagring understøttes ikke.</red>"
+
+reload:
+  starting: "Genindlæser oversættelser..."
+  complete: "<green>Oversættelser genindlæst!</green> <gray>({locales} sprog, {keys} nøgler)</gray>"
+
+error:
+  no-permission: "<red>Du har ikke tilladelse til at bruge denne kommando.</red>"
+  player-only: "<red>Denne kommando kan kun bruges af spillere.</red>"
+  invalid-usage: "<red>Ugyldig brug. Brug: {usage}</red>"

@@ -1,0 +1,27 @@
+# Turkish (Turkey) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Tekrar hoş geldin, {player}!</green> <gray>({online} oyuncu çevrimiçi)</gray>"
+  first-join: "<yellow>Sunucuya hoş geldin, {player}!</yellow> <gray>Bu senin ilk katılımın!</gray>"
+  tutorial: "<gradient:gold:yellow>Sunucuya Hoş Geldiniz!</gradient>"
+
+coins:
+  balance: "<gold>{amount}</gold> altının var"
+  info: "Altın: {coins}"
+
+lang:
+  current: "Mevcut dilin: <yellow>{locale}</yellow>"
+  available: "Mevcut diller: <gray>{locales}</gray>"
+  changed: "Dil değiştirildi: <green>{locale}</green>"
+  error: "<red>Dil değiştirilemedi. Dil depolama desteklenmiyor.</red>"
+
+reload:
+  starting: "Çeviriler yeniden yükleniyor..."
+  complete: "<green>Çeviriler yeniden yüklendi!</green> <gray>({locales} dil, {keys} anahtar)</gray>"
+
+error:
+  no-permission: "<red>Bu komutu kullanma izniniz yok.</red>"
+  player-only: "<red>Bu komut yalnızca oyuncular tarafından kullanılabilir.</red>"
+  invalid-usage: "<red>Geçersiz kullanım. Kullanım: {usage}</red>"

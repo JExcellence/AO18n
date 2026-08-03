@@ -1,0 +1,27 @@
+# Polish (Poland) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Witaj ponownie, {player}!</green> <gray>({online} graczy online)</gray>"
+  first-join: "<yellow>Witaj na serwerze, {player}!</yellow> <gray>To twoja pierwsza wizyta!</gray>"
+  tutorial: "<gradient:gold:yellow>Witaj na Serwerze!</gradient>"
+
+coins:
+  balance: "Masz <gold>{amount}</gold> monet"
+  info: "Monety: {coins}"
+
+lang:
+  current: "Twój obecny język: <yellow>{locale}</yellow>"
+  available: "Dostępne języki: <gray>{locales}</gray>"
+  changed: "Język zmieniony na: <green>{locale}</green>"
+  error: "<red>Nie udało się zmienić języka. Przechowywanie języka nie jest obsługiwane.</red>"
+
+reload:
+  starting: "Przeładowywanie tłumaczeń..."
+  complete: "<green>Tłumaczenia przeładowane!</green> <gray>({locales} języków, {keys} kluczy)</gray>"
+
+error:
+  no-permission: "<red>Nie masz uprawnień do użycia tej komendy.</red>"
+  player-only: "<red>Ta komenda może być używana tylko przez graczy.</red>"
+  invalid-usage: "<red>Nieprawidłowe użycie. Użyj: {usage}</red>"

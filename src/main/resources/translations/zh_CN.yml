@@ -1,0 +1,27 @@
+# Simplified Chinese (China) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>欢迎回来，{player}！</green> <gray>({online}名玩家在线)</gray>"
+  first-join: "<yellow>欢迎来到服务器，{player}！</yellow> <gray>这是你第一次加入！</gray>"
+  tutorial: "<gradient:gold:yellow>欢迎来到服务器！</gradient>"
+
+coins:
+  balance: "你拥有 <gold>{amount}</gold> 金币"
+  info: "金币: {coins}"
+
+lang:
+  current: "当前语言: <yellow>{locale}</yellow>"
+  available: "可用语言: <gray>{locales}</gray>"
+  changed: "语言已更改为: <green>{locale}</green>"
+  error: "<red>语言更改失败。不支持语言存储。</red>"
+
+reload:
+  starting: "正在重新加载翻译..."
+  complete: "<green>翻译已重新加载！</green> <gray>({locales}种语言，{keys}个键)</gray>"
+
+error:
+  no-permission: "<red>你没有权限使用此命令。</red>"
+  player-only: "<red>此命令只能由玩家使用。</red>"
+  invalid-usage: "<red>用法错误。用法: {usage}</red>"

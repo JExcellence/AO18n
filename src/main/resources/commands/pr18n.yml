@@ -1,0 +1,35 @@
+commands:
+  pr18n:
+    name: 'pr18n'
+    description: 'JExTranslate administration commands'
+    aliases:
+      - r18n
+    usage: 'r18n [reload | missing | export | metrics | help]'
+    argumentUsages:
+      1$: 'lut["prefix"] & "&7/" & alias & " &c<reload | missing | export | metrics | help>"'
+    errorMessages:
+      malformedEnum$: |
+        lut["prefix"] & "&7The value &c" & value & " &7is not one of (" &
+        iter_cat(constant_names, (constant_name) => "&c" & constant_name, "&7, ", "&cNo values available") &
+        "&7)"
+      playerNotOnline$: 'lut["prefix"] & "&7The player &c" & value & " &7is &cnot online"'
+      playerUnknown$: 'lut["prefix"] & "&7The player &c" & value & " &7has &cnot played &7on this server before"'
+      internalError$: 'lut["prefix"] & "&4An internal error occurred"'
+      notAConsole$: 'lut["prefix"] & "&cYou can only execute this command in the console"'
+      notAPlayer$: 'lut["prefix"] & "&7This command can only be executed as a &cconsole"'
+      malformedDouble$: 'lut["prefix"] & "&7The value &c" & value & " &7is not a valid &cdouble"'
+      malformedFloat$: 'lut["prefix"] & "&7The value &c" & value & " &7is not a valid &cfloat"'
+      malformedLong$: 'lut["prefix"] & "&7The value &c" & value & " &7is not a valid &clong"'
+      malformedInteger$: 'lut["prefix"] & "&7The value &c" & value & " &7is not a valid &cinteger"'
+    permissions:
+      missingMessage$: 'lut["prefix"] & "You\sre lacking the permission: " & permission'
+      nodes:
+        command: 'r18n.command'
+        commandHelp: 'r18n.command.help'
+        commandReload: 'r18n.command.reload'
+        commandMissing: 'r18n.command.missing'
+        commandExport: 'r18n.command.export'
+        commandMetrics: 'r18n.command.metrics'
+
+lut:
+  prefix: '&8[&1Admin&8] &7'

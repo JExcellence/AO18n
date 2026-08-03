@@ -1,0 +1,27 @@
+# Dutch (Netherlands) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Welkom terug, {player}!</green> <gray>({online} spelers online)</gray>"
+  first-join: "<yellow>Welkom op de server, {player}!</yellow> <gray>Dit is je eerste keer!</gray>"
+  tutorial: "<gradient:gold:yellow>Welkom op de Server!</gradient>"
+
+coins:
+  balance: "Je hebt <gold>{amount}</gold> munten"
+  info: "Munten: {coins}"
+
+lang:
+  current: "Je huidige taal is: <yellow>{locale}</yellow>"
+  available: "Beschikbare talen: <gray>{locales}</gray>"
+  changed: "Taal gewijzigd naar: <green>{locale}</green>"
+  error: "<red>Taal wijzigen mislukt. Taalopslag niet ondersteund.</red>"
+
+reload:
+  starting: "Vertalingen herladen..."
+  complete: "<green>Vertalingen herladen!</green> <gray>({locales} talen, {keys} sleutels)</gray>"
+
+error:
+  no-permission: "<red>Je hebt geen toestemming om dit commando te gebruiken.</red>"
+  player-only: "<red>Dit commando kan alleen door spelers worden gebruikt.</red>"
+  invalid-usage: "<red>Ongeldig gebruik. Gebruik: {usage}</red>"

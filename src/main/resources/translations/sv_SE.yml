@@ -1,0 +1,27 @@
+# Swedish (Sweden) translations for JExTranslate
+
+prefix: "<gold>[JExTranslate]</gold> "
+
+welcome:
+  returning: "<green>Välkommen tillbaka, {player}!</green> <gray>({online} spelare online)</gray>"
+  first-join: "<yellow>Välkommen till servern, {player}!</yellow> <gray>Det här är din första gång!</gray>"
+  tutorial: "<gradient:gold:yellow>Välkommen till Servern!</gradient>"
+
+coins:
+  balance: "Du har <gold>{amount}</gold> mynt"
+  info: "Mynt: {coins}"
+
+lang:
+  current: "Ditt nuvarande språk är: <yellow>{locale}</yellow>"
+  available: "Tillgängliga språk: <gray>{locales}</gray>"
+  changed: "Språk ändrat till: <green>{locale}</green>"
+  error: "<red>Kunde inte ändra språk. Språklagring stöds inte.</red>"
+
+reload:
+  starting: "Laddar om översättningar..."
+  complete: "<green>Översättningar omladdade!</green> <gray>({locales} språk, {keys} nycklar)</gray>"
+
+error:
+  no-permission: "<red>Du har inte behörighet att använda detta kommando.</red>"
+  player-only: "<red>Detta kommando kan endast användas av spelare.</red>"
+  invalid-usage: "<red>Ogiltig användning. Använd: {usage}</red>"

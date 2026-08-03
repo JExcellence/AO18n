@@ -1,0 +1,15 @@
+# ╔═══════════════════════════════════════════════════════════════╗
+# ║              JExTranslate — Translation Config               ║
+# ╠═══════════════════════════════════════════════════════════════╣
+# ║  Central configuration for the translation system.           ║
+# ║  Applies to the plugin whose translations/ folder this       ║
+# ║  file lives in.                                              ║
+# ╚═══════════════════════════════════════════════════════════════╝
+
+# ── Force Locale ────────────────────────────────────────────────
+# Force all players to receive messages in this locale,
+# regardless of their Minecraft client language setting.
+#
+# Leave empty ('') to honour each player's client language.
+# Examples: en_US, de_DE, es_ES, fr_FR, cs_CZ, sk_SK
+force-locale: ''
