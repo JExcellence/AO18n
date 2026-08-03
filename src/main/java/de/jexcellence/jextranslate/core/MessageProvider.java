@@ -343,21 +343,25 @@ public final class MessageProvider {
     }
 
     /**
-     * Pass-through for placeholder values. The previous blanket
-     * {@code <} → {@code \<} escape was neutering intentional
-     * MiniMessage in trusted placeholder strings (rank name gradients,
-     * describer output, reward summaries) — the result was literal
-     * {@code <gradient:#...>} text rendering in chat instead of the
-     * coloured substitution the caller expected.
+     * Escapes MiniMessage tags in placeholder values so that untrusted input
+     * (player names, chat-driven strings, etc.) cannot inject formatting,
+     * click events, or hover events into a rendered message.
      *
-     * <p>If a plugin genuinely needs to sanitise untrusted placeholder
-     * input (chat-driven values, say), it should call
-     * {@link net.kyori.adventure.text.minimessage.MiniMessage#stripTags}
-     * on the value before handing it to the message builder.
+     * <p>This restores the guarantee documented in the README: a player named
+     * {@code <red>Griefer</red>} is shown literally and cannot hijack the
+     * message's colour or attach a {@code click_event}. It uses Adventure's
+     * own {@link MiniMessage#escapeTags(String)}, which neutralises tag
+     * syntax without corrupting the surrounding text — unlike a naive
+     * {@code <} → {@code \<} replacement.
+     *
+     * <p>Callers that intentionally want to pass pre-formatted MiniMessage
+     * through a placeholder (e.g. a rank gradient computed server-side) can
+     * still do so by building the {@link Component} directly instead of
+     * going through a string placeholder.
      */
     @NotNull
     private String escapeMiniMessage(@NotNull String text) {
-        return text;
+        return miniMessage.escapeTags(text);
     }
 
     @NotNull
